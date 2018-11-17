@@ -150,27 +150,27 @@ def sequence_mining(filepath1, filepath2, k):
         # state should be the first element of the dictionary
         # state = list(dataset_pos.keys)[0]
         print("Considering item: ", state)
-        # compute the projected database
+        # get all tuple not first occurrences
         D_state = {}
+        y = 1
+        occurr_pos = dataset_pos[state]
+        occurr_neg = dataset_neg[state]
+
+        for sub_items in dataset_pos[state]:
+            print("sub_items = ",sub_items)
+            print(sub_items[0])
+            #t_id = sub_items[0][0]
+            t_id = 1
+            #if sub_items[y][0] == t_id:
+                # same t_id
+            #    D_state[state] = sub_items[y]
+            #    y += 1
+
+        print(D_state)
         # first transition: dataset = whole dictionary dataset_pos and dataset_neg
         valid_items = [k for k in freq_items]
         print("valid items")
         print(valid_items)
-        y = 0
-        for point_t_id in range(len(dict_pos[state])):
-            print("Number of occurrence of item", state, " = ", len(dict_pos[state]))
-            # t_id = transaction identifier of the point_t_id^th tuple
-            t_id = dict_pos[state][point_t_id][0]
-            print(t_id)
-            for next_item in valid_items:
-                # check the t_id:
-                # point_t_id_check = [list of tuple of the valid item]
-                point_t_id_check = dict_pos[next_item]
-                if point_t_id_check[y][0] == t_id:
-                    # found a match
-                else:
-                    # mismatch, search after
-                y += 1
 
 
 
