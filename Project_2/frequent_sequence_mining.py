@@ -65,10 +65,10 @@ def sequence_mining(filepath1, filepath2, k):
     dict_pos = dataset_pos.get_v()
     dict_neg = dataset_neg.get_v()
     # Support 1-length seq
-    print("--- Positive Dict ---")
-    print(dict_pos)
-    print("--- Negative Dict ---")
-    print(dict_neg)
+    # print("--- Positive Dict ---")
+    # print(dict_pos)
+    # print("--- Negative Dict ---")
+    # print(dict_neg)
 
 
 
@@ -100,25 +100,25 @@ def sequence_mining(filepath1, filepath2, k):
                 # combined supp already present in the freq_dict, not max length
                 if supp_pos[item]+supp_neg[item] in freq_dict:
                     freq_dict[supp_pos[item] + supp_neg[item]].append(item)
+                    freq_items.add(item)
                 # max length reached
                 elif len(freq_dict) == k:
                     min_key = min(freq_dict.keys())
                     if supp_pos[item]+supp_neg[item] > min_key:
                         del freq_dict[min_key]
                         freq_dict[supp_pos[item]+supp_neg[item]] = [item]
+                        freq_items.add(item)
                 # combined supp not present, not max length
                 else:
                     freq_dict[supp_pos[item] + supp_neg[item]] = [item]
-        freq_items = set(freq_dict.values())
+                    freq_items.add(item)
 
-        return [freq_dict, freq_items]
+        return [freq_dict, list(freq_items)]
 
     # calling the initialize_freq_dict() method
     [freq_dict, freq_items] = initialize_freq_dict(supp_pos, supp_neg, k)
-    print("Print freq dict")
-    print(freq_dict)
-    print(freq_dict.values())
-    print(freq_items)
+    # print("Print freq dict")
+    # print(freq_dict)
 
     def print_k_most(freq_dict):
         # {<key,value> = <freq,[list of items with freq]>}
@@ -145,20 +145,34 @@ def sequence_mining(filepath1, filepath2, k):
         else:
             freq_dict[total_supp] = [item]
 
-    def dfs(state,dataset_pos,dataset_neg,freq_dict,minFrequency):
+    def dfs(state,dataset_pos,dataset_neg,freq_dict,freq_items,minFrequency):
         print("--- Entering DFS ----")
         # state should be the first element of the dictionary
         # state = list(dataset_pos.keys)[0]
         print("Considering item: ", state)
+        # compute the projected database
+        D_state = {}
         # first transition: dataset = whole dictionary dataset_pos and dataset_neg
-        valid_items = [k for k in freq_dict.values()]
+        valid_items = [k for k in freq_items]
         print("valid items")
         print(valid_items)
-        for j in valid_items:
-            new_state = [*state, j]
-            print("new state [*state,j]",j)
-            print(new_state)
-            # build projection D|state, j = D|new_state
+        y = 0
+        for point_t_id in range(len(dict_pos[state])):
+            print("Number of occurrence of item", state, " = ", len(dict_pos[state]))
+            # t_id = transaction identifier of the point_t_id^th tuple
+            t_id = dict_pos[state][point_t_id][0]
+            print(t_id)
+            for next_item in valid_items:
+                # check the t_id:
+                # point_t_id_check = [list of tuple of the valid item]
+                point_t_id_check = dict_pos[next_item]
+                if point_t_id_check[y][0] == t_id:
+                    # found a match
+                else:
+                    # mismatch, search after
+                y += 1
+
+
 
 
     def spade(d_pos, d_neg, supp_pos, supp_neg, minFrequency):
@@ -171,7 +185,7 @@ def sequence_mining(filepath1, filepath2, k):
                     # update the freq_dict
                     update_freq_dict(freq_dict, total_supp, item, minFrequency)
 
-        dfs(list(d_pos.keys())[0], d_pos, d_neg, freq_dict, minFrequency)
+        dfs(list(d_pos.keys())[0], d_pos, d_neg, freq_dict, freq_items, minFrequency)
 
     #D, T = verticalRepresentation(dataset)
     #ECLAT(D, minFrequency, T)
