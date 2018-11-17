@@ -1,6 +1,0 @@
-*.dat
-.idea/
-__pycache__/
-plot/Data/
-plot/Updated_data/
-venv/
