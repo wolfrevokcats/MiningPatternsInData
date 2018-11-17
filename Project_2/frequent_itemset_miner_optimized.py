@@ -188,21 +188,21 @@ def alternative_miner(filepath, minFrequency):
         print(newD)
         return newD, T
 
-
     def printFrequent(state,dataset,D,theta,T):
+        print("Considering item: ", state)
         valid_keys = [k for k in D.keys() if k > state[-1] and dataset.counter[k] >= theta]
-        print("valid keys")
+        print("valid items")
         print(valid_keys)
         for j in valid_keys:
             new_state = [*state, j]
-            print("new state")
+            print("new state [*state,j]",j)
             print(new_state)
             # build projection D|state, j = D|new_state
             Dj = {}
             for k in valid_keys:
-                print("considered key in valid_key")
-                print(k)
+                print("considered item in [valid items]",k)
                 if k > j:
+                    print(k, " is > than ", j)
                     candidate = list(set(D[k]) & set(D[j]))
                     print("candidate")
                     print(candidate)
