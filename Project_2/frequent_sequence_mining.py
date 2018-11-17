@@ -151,20 +151,25 @@ def sequence_mining(filepath1, filepath2, k):
         # state = list(dataset_pos.keys)[0]
         print("Considering item: ", state)
         # get all tuple not first occurrences
-        D_state = {}
+        D_state = {state:[]}
         y = 1
         occurr_pos = dataset_pos[state]
         occurr_neg = dataset_neg[state]
-
-        for sub_items in dataset_pos[state]:
-            print("sub_items = ",sub_items)
-            print(sub_items[0])
-            #t_id = sub_items[0][0]
-            t_id = 1
-            #if sub_items[y][0] == t_id:
-                # same t_id
-            #    D_state[state] = sub_items[y]
-            #    y += 1
+        print("pos occ", occurr_pos)
+        print("neg occ", occurr_neg)
+        combined_occurr = list(set().union(occurr_neg,occurr_pos))
+        print(combined_occurr)
+        y = 1
+        for i in range(len(combined_occurr)):
+            print("i = ", i)
+            if combined_occurr[i][0] == combined_occurr[y][0]:
+                # look here and after: match
+                print("ok")
+                D_state[state].append((combined_occurr[y]))
+            else:
+                # mismatch
+                D_state[state].append((combined_occurr[y]))
+                y += 1
 
         print(D_state)
         # first transition: dataset = whole dictionary dataset_pos and dataset_neg
