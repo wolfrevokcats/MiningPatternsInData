@@ -59,26 +59,37 @@ class Dataset:
 
     def get_v(self):
         d = {}
-        l = []
         counter = 0
         for i in range(len(self.transactions)):
             transaction = (self.transactions[i])
-            # print(transaction)
+            # take the number close to the letter == position identifier
             id = int(transaction[1])
-            # print(id)
-            # All elements not at the start of the transaction
+            symbol = transaction[0]
             if id == 1:
+                # counter == number of transaction
                 counter += 1
-            if transaction[0] not in d:
-                # print(transaction[0])
-                # create a list with the first occurrence
-                d[transaction[0]] = [(counter, id)]
-                # print(d[transaction[0]])
+            if symbol not in d:
+                d[symbol] = [(counter, id)]
             else:
-                # append the position of the element to the list
-                d[transaction[0]].append((counter, id))
-                # print(d[transaction[0]])
+                d[symbol].append((counter, id))
         return d
+
+# Calculate the support
+# We cna use this class to compute also the other supports, not just the 1-length
+# Just be careful to pass a dictionary so just use {item we are considering,
+# [list of tuples corresponding to its occurrence]}
+
+def get_support(dict_symbol):
+    t_id_set = set()
+    dict_supp = {}
+    for item in dict_symbol:
+        # list of (t_id,t_pos_id)
+        value = dict_symbol[item]
+        for pair in value:
+            t_id_set.add(pair[0])
+        dict_supp[item] = len(t_id_set)
+        t_id_set = set()
+    return dict_supp
 
 def sequence_mining(filepath1,filepath2,k):
     dataset_pos = Dataset(filepath1)
@@ -86,39 +97,62 @@ def sequence_mining(filepath1,filepath2,k):
 
     dict_pos = dataset_pos.get_v()
     dict_neg = dataset_neg.get_v()
+    # Support 1-length seq
+    supp_pos = get_support(dict_pos)
+    supp_neg = get_support(dict_neg)
 
-    print("--- Positive dictionary ---")
-    print(dict_pos)
-    print("--- Negative dictionary ---")
-    print(dict_neg)
+    # Create the first k-most frequent dictionary: freq_dict
+    def update_freq_dict(supp_pos,supp_neg,k):
+        freq_dict = {}
+        for item in supp_pos:
+            if item in supp_neg:
+                # combined supp already present in the freq_dict, not max length
+                if supp_pos[item]+supp_neg[item] in freq_dict:
+                    freq_dict[supp_pos[item] + supp_neg[item]].append(item)
+                # max length reached
+                elif len(freq_dict) == k:
+                    min_key = min(freq_dict.keys())
+                    if supp_pos[item]+supp_neg[item] > min_key:
+                        del freq_dict[min_key]
+                        freq_dict[supp_pos[item]+supp_neg[item]] = [item]
+                # combined supp not present, not max length
+                else:
+                    freq_dict[supp_pos[item] + supp_neg[item]] = [item]
+
+        return freq_dict
+
+    # calling the initialize_freq_dict() method
+    freq_dict = update_freq_dict(supp_pos, supp_neg, k)
+
+    def print_k_most(freq_dict):
+        # {<key,value> = <freq,[list of items with freq]>}
+        # {<1,['A','B']>}
+        print("--- k-most frequent dictionary ---")
+        for freqs in freq_dict:
+            for items in freq_dict[freqs]:
+                print([items],freqs)
+
+    # calling the print_k_most() method
+    print_k_most(freq_dict)
 
 
-
-    def update_freqDict(newFreq,newItem,freq_dict,k):
-        # which are the parameters?
-        # create somewhere else the freq_dict
-
-        # k = number of entries of the dictionary!!
-        # dictionary of the k-most frequent items: freq_dict = {<freq_1,item_1>...<freq_k,item_k>}
-        # get last element: freq = list(freq.items()), freq[-1]
-        # get the smallest frequency among the one in the dictionary: freq[-1][0]
-        return ""
-
-
-
-    # non esiste minfrequency ma un dizionario di k frequenze
-    #
-    #def SPADE(D,minfFrequency):
+    def SPADE(D_pos,D_neg,supp_pos,supp_neg,minFrequency):
     #    # minFrequency == k
     #    theta = minFrequency * T
-    #    for item, transactions in D.items():
-    #        if len(transactions) >= theta:
-    #            print([item], len(transactions) / T)
+        for item, transactions in D_pos.items():
+            if item in D_neg.keys():
+                total_supp = supp_pos[item]+supp_neg[item]
+                if total_supp >= minFrequency:
+                    print([item], supp_pos[item], supp_neg[item], total_supp)
+                    # update the freq_dict
+                    #update_freq_dict(total_supp,item,minFrequency)
+
     #    printFrequent([0], D, theta, T)
 
     #D, T = verticalRepresentation(dataset)
     #ECLAT(D, minFrequency, T)
 
+    SPADE(dict_pos,dict_neg,supp_pos,supp_neg,k)
 
 if __name__ == '__main__':
     # Possible tests:
@@ -127,5 +161,9 @@ if __name__ == '__main__':
     # reu1_acq.txt
     # reu2_earn.txt
 
-    sequence_mining("positive.txt","negative.txt",2)
+    # sequence_mining("reu1_acq.txt","reu2_earn.txt",600)
+
+    # sequence_mining("prot1_PKA_group15.txt","prot2_SRC1521.txt",5)
+
+    sequence_mining("positive.txt","negative.txt",7)
 
