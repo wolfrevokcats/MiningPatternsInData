@@ -117,8 +117,8 @@ def sequence_mining(filepath1, filepath2, k):
 
     # calling the initialize_freq_dict() method
     [freq_dict, freq_items] = initialize_freq_dict(supp_pos, supp_neg, k)
-    # print("Print freq dict")
-    # print(freq_dict)
+
+    min_freq = min(freq_dict.keys())
 
     def print_k_most(freq_dict):
         # {<key,value> = <freq,[list of items with freq]>}
@@ -131,71 +131,65 @@ def sequence_mining(filepath1, filepath2, k):
     # calling the print_k_most() method
     print_k_most(freq_dict)
 
-    def update_freq_dict(freq_dict, total_supp, item, minFrequency):
+    def update_freq_dict(freq_dict, total_supp, item, min_freq, k):
         # combined supp already present in the freq_dict, not max length
         if total_supp in freq_dict:
             freq_dict[total_supp].append(item)
         # max length reached
-        elif len(freq_dict) == minFrequency:
-            min_key = min(freq_dict.keys())
-            if total_supp > min_key:
-                del freq_dict[min_key]
+        elif len(freq_dict) == k:
+            if total_supp > min_freq:
+                del freq_dict[min_freq]
                 freq_dict[total_supp] = [item]
         # combined supp not present, not max length
         else:
             freq_dict[total_supp] = [item]
 
-    def dfs(state,dataset_pos,dataset_neg,freq_dict,freq_items,minFrequency):
+        updated_min_freq = min(freq_dict.keys())
+
+        return updated_min_freq
+
+
+    # min_freq = min key in freq_dict
+    # k = size of freq_dict
+    def dfs(state, dataset_pos, dataset_neg, freq_dict, freq_items, min_freq, k):
         print("--- Entering DFS ----")
         # state should be the first element of the dictionary
         # state = list(dataset_pos.keys)[0]
         print("Considering item: ", state)
         # get all tuple not first occurrences
-        D_state = {state:[]}
-        y = 1
-        occurr_pos = dataset_pos[state]
-        occurr_neg = dataset_neg[state]
-        print("pos occ", occurr_pos)
-        print("neg occ", occurr_neg)
-        combined_occurr = list(set().union(occurr_neg,occurr_pos))
-        print(combined_occurr)
-        y = 1
-        for i in range(len(combined_occurr)):
-            print("i = ", i)
-            if combined_occurr[i][0] == combined_occurr[y][0]:
-                # look here and after: match
-                print("ok")
-                D_state[state].append((combined_occurr[y]))
-            else:
-                # mismatch
-                D_state[state].append((combined_occurr[y]))
-                y += 1
+        combined_occurr = list(set().union(dataset_pos[state],dataset_neg[state]))
+        D_state = {state: combined_occurr}
+        # compute the projected database:
+        # 1) take out all the first occurrence
+        D_proj_state = {state:[]}
+        for entries in range(len(combined_occurr)):
+            if combined_occurr[entries][1] != 1:
+                D_proj_state[state].append(combined_occurr[entries])
 
-        print(D_state)
+        print("Combined database of entry:", state)
+        print(D_proj_state)
+        # 2)
         # first transition: dataset = whole dictionary dataset_pos and dataset_neg
         valid_items = [k for k in freq_items]
         print("valid items")
         print(valid_items)
+        #
 
-
-
-
-    def spade(d_pos, d_neg, supp_pos, supp_neg, minFrequency):
+    def spade(d_pos, d_neg, supp_pos, supp_neg, min_freq, k):
 
         for item, transactions in d_pos.items():
             if item in d_neg.keys():
                 total_supp = supp_pos[item]+supp_neg[item]
-                if total_supp >= minFrequency:
+                # if total_supp >= minFrequency:
+                if total_supp >= min_freq:
                     # print([item], supp_pos[item], supp_neg[item], total_supp)
                     # update the freq_dict
-                    update_freq_dict(freq_dict, total_supp, item, minFrequency)
+                    new_min_freq = update_freq_dict(freq_dict, total_supp, item, min_freq, k)
 
-        dfs(list(d_pos.keys())[0], d_pos, d_neg, freq_dict, freq_items, minFrequency)
+        dfs(list(d_pos.keys())[0], d_pos, d_neg, freq_dict, freq_items, new_min_freq, k)
 
-    #D, T = verticalRepresentation(dataset)
-    #ECLAT(D, minFrequency, T)
-
-    spade(dict_pos,dict_neg,supp_pos,supp_neg,k)
+    # First call
+    spade(dict_pos, dict_neg, supp_pos, supp_neg, min_freq, k)
 
 if __name__ == '__main__':
     # Possible tests:
