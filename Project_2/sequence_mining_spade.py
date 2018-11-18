@@ -66,11 +66,11 @@ def sequence_mining(filepath1, filepath2, k):
         # compute combined occurences: list of tuple
 
         combined_occurr = list(set(dataset_pos[itemset]).union(set(dataset_neg[itemset])))
-        print("Combined occurrences of item: ", itemset)
-        print(combined_occurr)
+        # print("Combined occurrences of item: ", itemset)
+        # print(combined_occurr)
         # comb_support = get_support(dataset_pos[itemset],dataset_neg[itemset])
         combined_support = len(combined_occurr)
-        print("Combined support of item: ", itemset, " = ", combined_support)
+        # print("Combined support of item: ", itemset, " = ", combined_support)
         # save it in results:
         if combined_support in freq_dict:
             # comb_support is an existing key in freq_dict
@@ -90,23 +90,9 @@ def sequence_mining(filepath1, filepath2, k):
             freq_dict[combined_support] = [itemset]
 
         # Pruning
+        print(" ---- Pruning ---")
 
-        # create dictionary for itemset: {<transaction,first occurrence of itemset in that transaction>}
-        first_occurr_itemset = {}
-        # list of transactions identifiers for this itemset
-        for iter in range(combined_support):
-            key = combined_occurr[iter][0]
-            if key not in first_occurr_itemset:
-                # transaction not present
-                first_occurr_itemset[key] = combined_occurr[iter][1]
-            else:
-                # transaction is present
-                # updating the position
-                if combined_occurr[iter][1] < first_occurr_itemset[key]:
-                    first_occurr_itemset[key] = combined_occurr[iter][1]
-
-        print("First occurrences of state :", itemset)
-        print(first_occurr_itemset)
+        # create dictionary for itemset: {<transaction,first occurrence of itemset in that transaction>
 
         first_occurr_POS = {}
         for iter in range(len(dataset_pos[itemset])):
@@ -117,11 +103,11 @@ def sequence_mining(filepath1, filepath2, k):
             else:
                 # transaction is present
                 # updating the position
-                if dataset_pos[itemset][iter][1] < first_occurr_itemset[key]:
+                if dataset_pos[itemset][iter][1] < first_occurr_POS[key]:
                     first_occurr_POS[key] = dataset_pos[itemset][iter][1]
 
-        print("First occurrences of state POS:", itemset)
-        print(first_occurr_POS)
+        # print("First occurrences of state POS:", itemset)
+        # print(first_occurr_POS)
 
         first_occurr_NEG = {}
         for iter in range(len(dataset_neg[itemset])):
@@ -132,18 +118,26 @@ def sequence_mining(filepath1, filepath2, k):
             else:
                 # transaction is present
                 # updating the position
-                if dataset_neg[itemset][iter][1] < first_occurr_itemset[key]:
+                if dataset_neg[itemset][iter][1] < first_occurr_NEG[key]:
                     first_occurr_NEG [key] = dataset_neg[itemset][iter][1]
 
-        print("First occurrences of state NEG:", itemset)
-        print(first_occurr_NEG)
+        # print("First occurrences of state NEG:", itemset)
+        # print(first_occurr_NEG)
 
-        prune_dataset = {}
         # togli prime occorrenze
+        prune_dataset_POS = {itemset: list(set(dataset_pos[itemset]).difference(set(list(first_occurr_POS.items()))))}
 
+        prune_dataset_NEG = {itemset: list(set(dataset_neg[itemset]).difference(set(list(first_occurr_NEG.items()))))}
 
+        print("prune pos")
+        print(prune_dataset_POS)
+        print("prun neg")
+        print(prune_dataset_NEG)
 
         # togli i valori precedenti alle prime occ
+
+        print("adding other values")
+        print(prune_dataset_POS)
         # for all other items in dataset.keys()
             #  for all tuple in items:
                 # check in dict_first:
