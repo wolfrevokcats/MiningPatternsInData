@@ -50,11 +50,6 @@ class Dataset:
                 d[symbol].append((counter, id))
         return d
 
-# Calculate the support
-# We cna use this class to compute also the other supports, not just the 1-length
-# Just be careful to pass a dictionary so just use {item we are considering,
-# [list of tuples corresponding to its occurrence]}
-
 # SEQUENCE MINING ALGORITHM
 
 
@@ -62,94 +57,32 @@ def sequence_mining(filepath1, filepath2, k):
     dataset_pos = Dataset(filepath1)
     dataset_neg = Dataset(filepath2)
 
-    def get_first_support(dict_symbol):
-        t_id_set = set()
-        dict_supp = {}
-        for item in dict_symbol:
-            # list of (t_id,t_pos_id)
-            value = dict_symbol[item]
-            for pair in value:
-                t_id_set.add(pair[0])
-                dict_supp[item] = len(t_id_set)
-
-            t_id_set = set()
-
-        return dict_supp
-
-
-    def get_support(list_of_tuples):
-        counter = len(set([x[0] for x in list_of_tuples]))
+    def get_support(list_1,list_2):
+        counter = len(set([x[0] for x in list_1]).union([x[0] for x in list_2]))
         return counter
 
-    # Create the first k-most frequent dictionary: freq_dict
-    # update_freq_dict(total_supp,item,minFrequency)
-
-    def initialize_freq_dict(supp_pos, supp_neg, k):
-        freq_dict = {}
-        freq_items = set()
-        for item in supp_pos:
-            if item in supp_neg:
-                # combined supp already present in the freq_dict, not max length
-                if supp_pos[item]+supp_neg[item] in freq_dict:
-                    freq_dict[supp_pos[item] + supp_neg[item]].append(item)
-                    freq_items.add(item)
-                # max length reached
-                elif len(freq_dict) == k:
-                    min_key = min(freq_dict.keys())
-                    if supp_pos[item]+supp_neg[item] > min_key:
-                        del freq_dict[min_key]
-                        freq_dict[supp_pos[item]+supp_neg[item]] = [item]
-                        freq_items.add(item)
-                # combined supp not present, not max length
-                else:
-                    freq_dict[supp_pos[item] + supp_neg[item]] = [item]
-                    freq_items.add(item)
-
-        return [freq_dict, list(freq_items)]
-
-    # calling the initialize_freq_dict() method
-    # [freq_dict, freq_items] = initialize_freq_dict(supp_pos, supp_neg, k)
-
-    # min_freq = min(freq_dict.keys())
-
-    def print_k_most(freq_dict):
-        # {<key,value> = <freq,[list of items with freq]>}
-        # {<1,['A','B']>}
-        print("--- k-most frequent dictionary ---")
-        for freqs in freq_dict:
-            for items in freq_dict[freqs]:
-                print([items],freqs)
-
-    # calling the print_k_most() method
-    # print_k_most(freq_dict)
-
-    def update_freq_dict(freq_dict, total_supp, item, k):
-        # combined supp already present in the freq_dict, not max length
-        if total_supp in freq_dict:
-            freq_dict[total_supp].append(item)
-        # max length reached
-        elif len(freq_dict) == k:
-            min_freq = min(freq_dict.keys())
-            if total_supp > min_freq:
-                del freq_dict[min_freq]
-                freq_dict[total_supp] = [item]
-        # combined supp not present, not max length
-        else:
-            freq_dict[total_supp] = [item]
-
-    def combine_list(state, dataset_pos, dataset_neg):
-        comb = list(set().union(dataset_pos[state], dataset_neg[state]))
-        return comb
-
-
-    # min_freq = min key in freq_dict
-    # k = size of freq_dict
-
-    def dfs(result, itemset, dataset_pos, dataset_neg, k):
+    def dfs(freq_dict, itemset, dataset_pos, dataset_neg, k):
 
         # compute supp itemset in dataset
-        # comb = supp_pos + supp_neg
-        # save in results:
+        comb_support = get_support(dataset_pos[itemset],dataset_neg[itemset])
+        print("Combinet support of item: ", itemset, " = ", comb_support)
+        # save it in results:
+        if comb_support in freq_dict:
+            # comb_support is an existing key in freq_dict
+            freq_dict[comb_support].append([itemset])
+        else:
+            # comb_support not in freq_dict
+            # freq_dict is full
+            if len(freq_dict.keys()) == k:
+                # check the keys: if comb-supp < min freq
+                if comb_support < min(freq_dict.keys()):
+                    return
+                else:
+                    # remove the actual min freq
+                    del freq_dict[min(freq_dict.keys())]
+                    freq_dict[comb_support] = [itemset]
+            # freq_dict is not full
+            freq_dict[comb_support] = [itemset]
         # if comb in results:
             # append itemset nella lista
         # else:
