@@ -62,16 +62,6 @@ def sequence_mining(filepath1, filepath2, k):
     dataset_pos = Dataset(filepath1)
     dataset_neg = Dataset(filepath2)
 
-    dict_pos = dataset_pos.get_v()
-    dict_neg = dataset_neg.get_v()
-    # Support 1-length seq
-    # print("--- Positive Dict ---")
-    # print(dict_pos)
-    # print("--- Negative Dict ---")
-    # print(dict_neg)
-
-
-
     def get_first_support(dict_symbol):
         t_id_set = set()
         dict_supp = {}
@@ -86,9 +76,6 @@ def sequence_mining(filepath1, filepath2, k):
 
         return dict_supp
 
-    # First call
-    supp_pos = get_first_support(dict_pos)
-    supp_neg = get_first_support(dict_neg)
 
     def get_support(list_of_tuples):
         counter = len(set([x[0] for x in list_of_tuples]))
@@ -121,9 +108,9 @@ def sequence_mining(filepath1, filepath2, k):
         return [freq_dict, list(freq_items)]
 
     # calling the initialize_freq_dict() method
-    [freq_dict, freq_items] = initialize_freq_dict(supp_pos, supp_neg, k)
+    # [freq_dict, freq_items] = initialize_freq_dict(supp_pos, supp_neg, k)
 
-    min_freq = min(freq_dict.keys())
+    # min_freq = min(freq_dict.keys())
 
     def print_k_most(freq_dict):
         # {<key,value> = <freq,[list of items with freq]>}
@@ -134,7 +121,7 @@ def sequence_mining(filepath1, filepath2, k):
                 print([items],freqs)
 
     # calling the print_k_most() method
-    print_k_most(freq_dict)
+    # print_k_most(freq_dict)
 
     def update_freq_dict(freq_dict, total_supp, item, k):
         # combined supp already present in the freq_dict, not max length
@@ -157,64 +144,69 @@ def sequence_mining(filepath1, filepath2, k):
 
     # min_freq = min key in freq_dict
     # k = size of freq_dict
-    def dfs(state, dataset_pos, dataset_neg, freq_dict, freq_items, k):
-        print("--- Entering DFS ----")
-        # state should be the first element of the dictionary
-        # state = list(dataset_pos.keys())[0] or state = list(dataset_neg.keys()[0])
-        print("Considering item: ", state)
 
-        # 1) Generate list of possible candidates
-        valid_items = [k for k in freq_items]
-        print("valid possible suffix of prefix: ", state)
-        print(valid_items)
+    def dfs(result, itemset, dataset_pos, dataset_neg, k):
 
-        # 2) Combine the two list of state deriving from the dataset pos and eng
-        combined_occurr = combine_list(state, dataset_pos, dataset_neg)
-        print("Dictionary containing combined occurrences of state", state)
-        D_state = {state: combined_occurr}
-        print(D_state)
+        # compute supp itemset in dataset
+        # comb = supp_pos + supp_neg
+        # save in results:
+        # if comb in results:
+            # append itemset nella lista
+        # else:
+            # if # chiavi in rsults == k
+                # if comb < min freq
+                    # return
+                # else
+                    # rimuovo la attuale chiave minima
+                    # inserisco <chiave,itemset> in results: results[supp].append(itemset)
+            # inserisco chiave in supps
+            # inserisco itemset in lista di results: results[supp].append(itemset)
 
-        # 3) Take all the first occurrences
-        D_first_state = {state:[]}
-        for entries in range(len(combined_occurr)):
-            if combined_occurr[entries][1] == 1:
-                D_first_state[state].append(combined_occurr[entries])
-        print("Combined database of state :", state, " of first occurrences")
-        print(D_first_state)
+        # pruning
 
-        # 4) Take all the not-first occurrences
-        good_presence = set(combined_occurr).difference(D_first_state[state])
-        print("Good positions for state: ", state)
-        print(good_presence)
+        # create dictionary for itemset: {<transaction,first occurrence of itemset in that transaction>}
+        # prune_dataset = {}
+        # togli prime occorrenze
+        # togli i valori precedenti alle prime occ
+        # for all other items in dataset.keys()
+            #  for all tuple in items:
+                # check in dict_first:
+                # se il primo oggeto tupla in dict_first
+                    # check se secondo oggetto della tupla > dict_fist[oggetto tupla]
+                        # inserisco tupla in prune_dataset
 
-        # 5) Compute the projected database
-        for item in valid_items:
-            new_state = [*state, item]
-            print("new state [*state,j]", item)
-            print(new_state)
-            Dj = {}
-            for k in valid_items:
-                print("considered item in [valid items]", k)
-                # if len(set(combine_list(k, dataset_pos, dataset_neg)).difference(combined_occurr)) != 0:
+        # items = lis(set(prune_dataset_1.keys()).union(set(prune_dataset_2.keys()))
+        # come faccio a considerare entrambi i dataset insieme
 
-    def spade(d_pos, d_neg, k):
-        # create itemsets from single items
+        # for state in items with state != itemset
+            # y = concatzione di state a itemset
+            # combinare le liste di occurr tra state e itemset
+                # check in dict_first:
+                # se il primo oggeto tupla in dict_first
+                # check se secondo oggetto della tupla > dict_fist[oggetto tupla]
+                # inserisco tupla in prune_dataset
 
+            # dfs(y,prune_dataset_1,prune_data_set_2)
 
-        min_freq = min(freq_dict.keys())
-        for item, transactions in d_pos.items():
-            if item in d_neg.keys():
-                total_supp = supp_pos[item]+supp_neg[item]
-                # if total_supp >= minFrequency:
-                if total_supp >= min_freq:
-                    # print([item], supp_pos[item], supp_neg[item], total_supp)
-                    # update the freq_dict
-                    update_freq_dict(freq_dict, total_supp, item, k)
+    def spade(dataset_pos, dataset_neg, k):
+        dict_pos = dataset_pos.get_v()
+        dict_neg = dataset_neg.get_v()
 
-        dfs(list(d_pos.keys())[0], d_pos, d_neg, freq_dict, freq_items, k)
+        # 1) Create itemsets from single items
+        valid_itemsets_pos = [k for k in dict_pos.keys()]
+        valid_itemsets_neg = [j for j in dict_neg.keys()]
+        itemsets = list(set(valid_itemsets_neg).union(set(valid_itemsets_pos)))
+
+        # 2) Crea una list vuota results
+        # results = {item: [supp_pos supp_neg supp_pos+supp_neg]}
+        result = {}
+
+        for item in itemsets.keys():
+            dfs(result,[item],dataset_pos,dataset_neg)
+
 
     # First call
-    spade(dict_pos, dict_neg, supp_pos, supp_neg, k)
+    spade(dataset_pos, dataset_neg, k)
 
 if __name__ == '__main__':
     # Possible tests:
