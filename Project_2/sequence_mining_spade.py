@@ -66,9 +66,11 @@ def sequence_mining(filepath1, filepath2, k):
         # compute combined occurences: list of tuple
 
         combined_occurr = list(set(dataset_pos[itemset]).union(set(dataset_neg[itemset])))
+        print("Combined occurrences of item: ", itemset)
+        print(combined_occurr)
         # comb_support = get_support(dataset_pos[itemset],dataset_neg[itemset])
         combined_support = len(combined_occurr)
-        print("Combinet support of item: ", itemset, " = ", combined_support)
+        print("Combined support of item: ", itemset, " = ", combined_support)
         # save it in results:
         if combined_support in freq_dict:
             # comb_support is an existing key in freq_dict
@@ -104,7 +106,7 @@ def sequence_mining(filepath1, filepath2, k):
                 if combined_occurr[iter][1] < first_occurr_itemset[key]:
                     first_occurr_itemset[key] = combined_occurr[iter][1]
 
-        print("Combined database of state :", itemset, " of first occurrences")
+        print("First occurrences of state :", itemset)
         print(first_occurr_itemset)
 
         prune_dataset = {}
@@ -147,7 +149,7 @@ def sequence_mining(filepath1, filepath2, k):
         freq_dict = {}
 
         for item in itemsets:
-            dfs(freq_dict, [item], dict_pos, dict_neg, k)
+            dfs(freq_dict, item, dict_pos, dict_neg, k)
 
 
     # First call
