@@ -82,7 +82,6 @@ def sequence_mining(filepath1, filepath2, k):
 
         first_occurr_POS = get_first(itemset,dataset_pos)
         prune_dataset_POS = {itemset: list(set(dataset_pos[itemset]).difference(set(list(first_occurr_POS.items()))))}
-
         possible_candidates = [x for x in dataset_pos.keys() if x != itemset]
         print("poss cand",possible_candidates)
         for other_items in possible_candidates:
@@ -97,13 +96,26 @@ def sequence_mining(filepath1, filepath2, k):
                         else:
                             prune_dataset_POS[other_items].append((trans, pos))
 
+        prune_dataset = {}
+        '''for keys in prune_dataset_POS.keys():
+            newState = (*keys, itemset)
+            newValue = prune_dataset_POS[keys]
+            prune_dataset[newState] = newValue'''
+
         return prune_dataset_POS
 
     def dfs(freq_dict, itemset, dataset_pos, dataset_neg, k):
 
         # compute combined occurences: list of tuple
-
-        combined_occurr = list(set(dataset_pos[itemset]).union(set(dataset_neg[itemset])))
+        print('pos',dataset_pos)
+        print('neg',dataset_neg)
+        try:
+            combined_occurr = list(set(dataset_pos[itemset]).union(set(dataset_neg[itemset])))
+        except:
+            if itemset in dataset_pos.keys():
+                combined_occurr = dataset_pos[itemset]
+            else:
+                combined_occurr = dataset_neg[itemset]
         # print("Combined occurrences of item: ", itemset)
         # print(combined_occurr)
         # comb_support = get_support(dataset_pos[itemset],dataset_neg[itemset])
@@ -137,13 +149,12 @@ def sequence_mining(filepath1, filepath2, k):
         #print(prune_dataset_pos)
         #print(prune_dataset_neg)
 
-        print(freq_dict)
 
         items = list(set(prune_dataset_pos.keys()).union(set(prune_dataset_pos.keys())))
-        #print(items)
+        print(prune_dataset_pos)
+        print(items)
         for entry in items:
             dfs(freq_dict,entry,prune_dataset_pos,prune_dataset_neg,k)
-
 
     def spade(dataset_pos, dataset_neg, k):
         dict_pos = dataset_pos.get_v()
@@ -153,14 +164,13 @@ def sequence_mining(filepath1, filepath2, k):
         valid_itemsets_pos = [k for k in dict_pos.keys()]
         valid_itemsets_neg = [j for j in dict_neg.keys()]
         itemsets = list(set(valid_itemsets_neg).union(set(valid_itemsets_pos)))
-        print(itemsets)
 
         # 2) Crea una list vuota results
         # results = {item: [supp_pos supp_neg supp_pos+supp_neg]}
         freq_dict = {}
 
-        #for item in itemsets:
-        #    dfs(freq_dict, item, dict_pos, dict_neg, k)
+        for item in itemsets:
+            dfs(freq_dict, item, dict_pos, dict_neg, k)
 
 
     # First call
@@ -177,6 +187,5 @@ if __name__ == '__main__':
     # sequence_mining("reu1_acq.txt","reu2_earn.txt",600)
 
     # sequence_mining("prot1_PKA_group15.txt","prot2_SRC1521.txt",5)
-
-    sequence_mining("positive.txt","negative.txt",6)
+    sequence_mining("positive.txt","negative.txt",2)
 
