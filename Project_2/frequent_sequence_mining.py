@@ -214,7 +214,7 @@ def sequence_mining(filepath1, filepath2, k):
         dfs(list(d_pos.keys())[0], d_pos, d_neg, freq_dict, freq_items, k)
 
     # First call
-    spade(dict_pos, dict_neg, supp_pos, supp_neg, k)
+    spade(dict_pos, dict_neg, k)
 
 if __name__ == '__main__':
     # Possible tests:

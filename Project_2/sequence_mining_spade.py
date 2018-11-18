@@ -63,43 +63,55 @@ def sequence_mining(filepath1, filepath2, k):
 
     def dfs(freq_dict, itemset, dataset_pos, dataset_neg, k):
 
-        # compute supp itemset in dataset
-        comb_support = get_support(dataset_pos[itemset],dataset_neg[itemset])
-        print("Combinet support of item: ", itemset, " = ", comb_support)
+        # compute combined occurences: list of tuple
+
+        combined_occurr = list(set(dataset_pos[itemset]).union(set(dataset_neg[itemset])))
+        # comb_support = get_support(dataset_pos[itemset],dataset_neg[itemset])
+        combined_support = len(combined_occurr)
+        print("Combinet support of item: ", itemset, " = ", combined_support)
         # save it in results:
-        if comb_support in freq_dict:
+        if combined_support in freq_dict:
             # comb_support is an existing key in freq_dict
-            freq_dict[comb_support].append([itemset])
+            freq_dict[combined_support].append([itemset])
         else:
             # comb_support not in freq_dict
             # freq_dict is full
             if len(freq_dict.keys()) == k:
                 # check the keys: if comb-supp < min freq
-                if comb_support < min(freq_dict.keys()):
+                if combined_support < min(freq_dict.keys()):
                     return
                 else:
                     # remove the actual min freq
                     del freq_dict[min(freq_dict.keys())]
-                    freq_dict[comb_support] = [itemset]
+                    freq_dict[combined_support] = [itemset]
             # freq_dict is not full
-            freq_dict[comb_support] = [itemset]
-        # if comb in results:
-            # append itemset nella lista
-        # else:
-            # if # chiavi in rsults == k
-                # if comb < min freq
-                    # return
-                # else
-                    # rimuovo la attuale chiave minima
-                    # inserisco <chiave,itemset> in results: results[supp].append(itemset)
-            # inserisco chiave in supps
-            # inserisco itemset in lista di results: results[supp].append(itemset)
+            freq_dict[combined_support] = [itemset]
 
-        # pruning
+        # Pruning
 
         # create dictionary for itemset: {<transaction,first occurrence of itemset in that transaction>}
-        # prune_dataset = {}
+        first_occurr_itemset = {}
+        # list of transactions identifiers for this itemset
+        trans_occurr = list((set([x[0] for x in combined_occurr])))
+        for iter in range(combined_support):
+            key = combined_occurr[iter][0]
+            if key not in first_occurr_itemset:
+                # transaction not present
+                first_occurr_itemset[key] = combined_occurr[iter][1]
+            else:
+                # transaction is present
+                # updating the position
+                if combined_occurr[iter][1] < first_occurr_itemset[key]:
+                    first_occurr_itemset[key] = combined_occurr[iter][1]
+
+        print("Combined database of state :", itemset, " of first occurrences")
+        print(first_occurr_itemset)
+
+        prune_dataset = {}
         # togli prime occorrenze
+
+
+
         # togli i valori precedenti alle prime occ
         # for all other items in dataset.keys()
             #  for all tuple in items:
@@ -132,10 +144,10 @@ def sequence_mining(filepath1, filepath2, k):
 
         # 2) Crea una list vuota results
         # results = {item: [supp_pos supp_neg supp_pos+supp_neg]}
-        result = {}
+        freq_dict = {}
 
-        for item in itemsets.keys():
-            dfs(result,[item],dataset_pos,dataset_neg)
+        for item in itemsets:
+            dfs(freq_dict, [item], dict_pos, dict_neg, k)
 
 
     # First call
