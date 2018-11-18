@@ -78,6 +78,34 @@ def sequence_mining(filepath1, filepath2, k):
 
         return first_occurr
 
+    def prune(itemset,dataset_pos):
+
+        first_occurr_POS = get_first(itemset,dataset_pos)
+        # print("First occurrences of state POS:", itemset)
+        # print(first_occurr_POS)
+        # print("First occurrences of state NEG:", itemset)
+        # print(first_occurr_NEG)
+        prune_dataset_POS = {itemset: list(set(dataset_pos[itemset]).difference(set(list(first_occurr_POS.items()))))}
+        possible_candidates = [x for x in dataset_pos.keys() if x != itemset]
+        for other_items in possible_candidates:
+            for values in dataset_pos[other_items]:
+                trans, pos = values
+                if trans in first_occurr_POS:
+                    # if the trans is present: other_items comes after itemset
+                    if pos > first_occurr_POS[trans]:
+                        # print("This occ ", (trans, first_occurr_POS[trans]), "before this", (trans, pos))
+                        if other_items not in prune_dataset_POS:
+                            prune_dataset_POS[other_items] = [(trans, pos)]
+                        else:
+                            prune_dataset_POS[other_items].append((trans, pos))
+
+        prune_dataset = {}
+        for keys in prune_dataset_POS.keys():
+            newState = (*keys, itemset)
+            newValue = prune_dataset_POS[keys]
+            prune_dataset[newState] = newValue
+
+        return prune_dataset
 
     def dfs(freq_dict, itemset, dataset_pos, dataset_neg, k):
 
@@ -108,51 +136,19 @@ def sequence_mining(filepath1, filepath2, k):
             freq_dict[combined_support] = [itemset]
 
         # Pruning
-        print(" ---- Pruning ---")
+        print(" ---- Creating Projected Database of item ", itemset, "----")
 
         # create dictionary for itemset: {<transaction,first occurrence of itemset in that transaction>
 
-        first_occurr_POS = get_first(itemset,dataset_pos)
-        first_occurr_NEG = get_first(itemset,dataset_neg)
+        prune_dataset_pos = prune(itemset,dataset_pos)
+        prune_dataset_neg = prune(itemset,dataset_neg)
 
-        # print("First occurrences of state POS:", itemset)
-        # print(first_occurr_POS)
-        # print("First occurrences of state NEG:", itemset)
-        # print(first_occurr_NEG)
-
-        # togli prime occorrenze
-        prune_dataset_POS = {itemset: list(set(dataset_pos[itemset]).difference(set(list(first_occurr_POS.items()))))}
-
-        prune_dataset_NEG = {itemset: list(set(dataset_neg[itemset]).difference(set(list(first_occurr_NEG.items()))))}
-
-        print("prune pos")
-        print(prune_dataset_POS)
-        print("prun neg")
-        print(prune_dataset_NEG)
-
-        # togli i valori precedenti alle prime occ
-        for other_items in dataset_pos.keys():
-            print("Considered item: ", other_items)
-            for values in range(len(dataset_pos[other_items])):
-                trans, pos = dataset_pos[other_items][values]
-                print((trans,pos))
-                if trans in first_occurr_POS:
-                    print(first_occurr_POS[trans])
-                    if pos > first_occurr_POS[trans]:
-                        print("pos > ")
-                        #prune_dataset_POS[other_items].append((trans, pos))
-
-        print("adding other values")
-        print(prune_dataset_POS)
-        # for all other items in dataset.keys()
-            #  for all tuple in items:
-                # check in dict_first:
-                # se il primo oggeto tupla in dict_first
-                    # check se secondo oggetto della tupla > dict_fist[oggetto tupla]
-                        # inserisco tupla in prune_dataset
+        print("Pruned POSITIVE database")
+        print(prune_dataset_neg)
+        print("Pruned NEGATIVE database")
+        print(prune_dataset_pos)
 
         # items = list(set(prune_dataset_1.keys()).union(set(prune_dataset_2.keys()))
-        # come faccio a considerare entrambi i dataset insieme
 
         # for state in items with state != itemset
             # y = concatzione di state a itemset
@@ -162,7 +158,7 @@ def sequence_mining(filepath1, filepath2, k):
                 # check se secondo oggetto della tupla > dict_fist[oggetto tupla]
                 # inserisco tupla in prune_dataset
 
-            # dfs(y,prune_dataset_1,prune_data_set_2)
+        # dfs(y,prune_dataset_1,prune_data_set_2)
 
     def spade(dataset_pos, dataset_neg, k):
         dict_pos = dataset_pos.get_v()
