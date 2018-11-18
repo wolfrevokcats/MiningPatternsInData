@@ -94,7 +94,6 @@ def sequence_mining(filepath1, filepath2, k):
         # create dictionary for itemset: {<transaction,first occurrence of itemset in that transaction>}
         first_occurr_itemset = {}
         # list of transactions identifiers for this itemset
-        trans_occurr = list((set([x[0] for x in combined_occurr])))
         for iter in range(combined_support):
             key = combined_occurr[iter][0]
             if key not in first_occurr_itemset:
@@ -109,6 +108,36 @@ def sequence_mining(filepath1, filepath2, k):
         print("First occurrences of state :", itemset)
         print(first_occurr_itemset)
 
+        first_occurr_POS = {}
+        for iter in range(len(dataset_pos[itemset])):
+            key = dataset_pos[itemset][iter][0]
+            if key not in first_occurr_POS:
+                # transaction not present
+                first_occurr_POS[key] = dataset_pos[itemset][iter][1]
+            else:
+                # transaction is present
+                # updating the position
+                if dataset_pos[itemset][iter][1] < first_occurr_itemset[key]:
+                    first_occurr_POS[key] = dataset_pos[itemset][iter][1]
+
+        print("First occurrences of state POS:", itemset)
+        print(first_occurr_POS)
+
+        first_occurr_NEG = {}
+        for iter in range(len(dataset_neg[itemset])):
+            key = dataset_neg[itemset][iter][0]
+            if key not in first_occurr_NEG:
+                # transaction not present
+                first_occurr_NEG[key] = dataset_neg[itemset][iter][1]
+            else:
+                # transaction is present
+                # updating the position
+                if dataset_neg[itemset][iter][1] < first_occurr_itemset[key]:
+                    first_occurr_NEG [key] = dataset_neg[itemset][iter][1]
+
+        print("First occurrences of state NEG:", itemset)
+        print(first_occurr_NEG)
+
         prune_dataset = {}
         # togli prime occorrenze
 
@@ -122,7 +151,7 @@ def sequence_mining(filepath1, filepath2, k):
                     # check se secondo oggetto della tupla > dict_fist[oggetto tupla]
                         # inserisco tupla in prune_dataset
 
-        # items = lis(set(prune_dataset_1.keys()).union(set(prune_dataset_2.keys()))
+        # items = list(set(prune_dataset_1.keys()).union(set(prune_dataset_2.keys()))
         # come faccio a considerare entrambi i dataset insieme
 
         # for state in items with state != itemset
