@@ -108,7 +108,7 @@ def sequence_mining(filepath1, filepath2, k):
             freq_dict[combined_support] = [itemset]
 
         # Pruning
-        print(" ---- Pruning ---")
+        print(" ---- Pruning on item ", itemset, " database ----")
 
         # create dictionary for itemset: {<transaction,first occurrence of itemset in that transaction>
 
@@ -125,24 +125,31 @@ def sequence_mining(filepath1, filepath2, k):
 
         prune_dataset_NEG = {itemset: list(set(dataset_neg[itemset]).difference(set(list(first_occurr_NEG.items()))))}
 
-        print("prune pos")
+        # print("prune pos")
         print(prune_dataset_POS)
-        print("prun neg")
+        # print("prun neg")
         print(prune_dataset_NEG)
 
         # togli i valori precedenti alle prime occ
-        for other_items in dataset_pos.keys():
+        possible_candidates = [x for x in dataset_pos.keys() if x != itemset]
+        for other_items in possible_candidates:
             print("Considered item: ", other_items)
             for values in range(len(dataset_pos[other_items])):
                 trans, pos = dataset_pos[other_items][values]
-                print((trans,pos))
+                print("Considered tuple: ", (trans, pos))
                 if trans in first_occurr_POS:
-                    print(first_occurr_POS[trans])
+                    print("Items ", itemset, " and ", other_items, " are in the same transaction", trans)
                     if pos > first_occurr_POS[trans]:
-                        print("pos > ")
-                        #prune_dataset_POS[other_items].append((trans, pos))
+                        print("There is a position of ", other_items, "after item ", itemset)
+                        if other_items not in prune_dataset_POS:
+                            print("insert",(trans, pos))
+                            prune_dataset_POS[other_items] = [(trans,pos)]
+                        else:
+                            print("add", (trans, pos))
+                            prune_dataset_POS[other_items].append((trans,pos))
+                    print("There is NO position of ", other_items, "after item ", itemset)
+                print("Items ", itemset, " and ", other_items, " are not in the same transaction", trans)
 
-        print("adding other values")
         print(prune_dataset_POS)
         # for all other items in dataset.keys()
             #  for all tuple in items:
