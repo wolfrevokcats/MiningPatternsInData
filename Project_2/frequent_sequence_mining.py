@@ -131,12 +131,13 @@ def sequence_mining(filepath1, filepath2, k):
     # calling the print_k_most() method
     print_k_most(freq_dict)
 
-    def update_freq_dict(freq_dict, total_supp, item, min_freq, k):
+    def update_freq_dict(freq_dict, total_supp, item, k):
         # combined supp already present in the freq_dict, not max length
         if total_supp in freq_dict:
             freq_dict[total_supp].append(item)
         # max length reached
         elif len(freq_dict) == k:
+            min_freq = min(freq_dict.keys())
             if total_supp > min_freq:
                 del freq_dict[min_freq]
                 freq_dict[total_supp] = [item]
@@ -144,39 +145,39 @@ def sequence_mining(filepath1, filepath2, k):
         else:
             freq_dict[total_supp] = [item]
 
-        updated_min_freq = min(freq_dict.keys())
-
-        return updated_min_freq
-
 
     # min_freq = min key in freq_dict
     # k = size of freq_dict
-    def dfs(state, dataset_pos, dataset_neg, freq_dict, freq_items, min_freq, k):
+    def dfs(state, dataset_pos, dataset_neg, freq_dict, freq_items, k):
         print("--- Entering DFS ----")
         # state should be the first element of the dictionary
         # state = list(dataset_pos.keys)[0]
         print("Considering item: ", state)
-        # get all tuple not first occurrences
+        # Get occurrences of state in both dataset
         combined_occurr = list(set().union(dataset_pos[state],dataset_neg[state]))
+        print("D_state")
         D_state = {state: combined_occurr}
+        print(D_state)
         # compute the projected database:
-        # 1) take out all the first occurrence
-        D_proj_state = {state:[]}
+        # 1) take all the first occurrence
+        D_first_state = {state:[]}
         for entries in range(len(combined_occurr)):
-            if combined_occurr[entries][1] != 1:
-                D_proj_state[state].append(combined_occurr[entries])
-
-        print("Combined database of entry:", state)
-        print(D_proj_state)
+            if combined_occurr[entries][1] == 1:
+                D_first_state[state].append(combined_occurr[entries])
+        print("Combined database of state :", state, " of first occurrences")
+        print(D_first_state)
         # 2)
+
+
         # first transition: dataset = whole dictionary dataset_pos and dataset_neg
         valid_items = [k for k in freq_items]
         print("valid items")
         print(valid_items)
         #
 
-    def spade(d_pos, d_neg, supp_pos, supp_neg, min_freq, k):
+    def spade(d_pos, d_neg, supp_pos, supp_neg, k):
 
+        min_freq = min(freq_dict.keys())
         for item, transactions in d_pos.items():
             if item in d_neg.keys():
                 total_supp = supp_pos[item]+supp_neg[item]
@@ -184,12 +185,12 @@ def sequence_mining(filepath1, filepath2, k):
                 if total_supp >= min_freq:
                     # print([item], supp_pos[item], supp_neg[item], total_supp)
                     # update the freq_dict
-                    new_min_freq = update_freq_dict(freq_dict, total_supp, item, min_freq, k)
+                    update_freq_dict(freq_dict, total_supp, item, k)
 
-        dfs(list(d_pos.keys())[0], d_pos, d_neg, freq_dict, freq_items, new_min_freq, k)
+        dfs(list(d_pos.keys())[0], d_pos, d_neg, freq_dict, freq_items, k)
 
     # First call
-    spade(dict_pos, dict_neg, supp_pos, supp_neg, min_freq, k)
+    spade(dict_pos, dict_neg, supp_pos, supp_neg, k)
 
 if __name__ == '__main__':
     # Possible tests:
