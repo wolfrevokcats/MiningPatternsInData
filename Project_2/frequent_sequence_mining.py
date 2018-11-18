@@ -72,7 +72,7 @@ def sequence_mining(filepath1, filepath2, k):
 
 
 
-    def get_support(dict_symbol):
+    def get_first_support(dict_symbol):
         t_id_set = set()
         dict_supp = {}
         for item in dict_symbol:
@@ -86,8 +86,13 @@ def sequence_mining(filepath1, filepath2, k):
 
         return dict_supp
 
-    supp_pos = get_support(dict_pos)
-    supp_neg = get_support(dict_neg)
+    # First call
+    supp_pos = get_first_support(dict_pos)
+    supp_neg = get_first_support(dict_neg)
+
+    def get_support(list_of_tuples):
+        counter = len(set([x[0] for x in list_of_tuples]))
+        return counter
 
     # Create the first k-most frequent dictionary: freq_dict
     # update_freq_dict(total_supp,item,minFrequency)
@@ -145,35 +150,53 @@ def sequence_mining(filepath1, filepath2, k):
         else:
             freq_dict[total_supp] = [item]
 
+    def combine_list(state, dataset_pos, dataset_neg):
+        comb = list(set().union(dataset_pos[state], dataset_neg[state]))
+        return comb
+
 
     # min_freq = min key in freq_dict
     # k = size of freq_dict
     def dfs(state, dataset_pos, dataset_neg, freq_dict, freq_items, k):
         print("--- Entering DFS ----")
         # state should be the first element of the dictionary
-        # state = list(dataset_pos.keys)[0]
+        # state = list(dataset_pos.keys())[0] or state = list(dataset_neg.keys()[0])
         print("Considering item: ", state)
-        # Get occurrences of state in both dataset
-        combined_occurr = list(set().union(dataset_pos[state],dataset_neg[state]))
-        print("D_state")
+
+        # 1) Generate list of possible candidates
+        valid_items = [k for k in freq_items]
+        print("valid possible suffix of prefix: ", state)
+        print(valid_items)
+
+        # 2) Combine the two list of state deriving from the dataset pos and eng
+        combined_occurr = combine_list(state, dataset_pos, dataset_neg)
+        print("Dictionary containing combined occurrences of state", state)
         D_state = {state: combined_occurr}
         print(D_state)
-        # compute the projected database:
-        # 1) take all the first occurrence
+
+        # 3) Take all the first occurrences
         D_first_state = {state:[]}
         for entries in range(len(combined_occurr)):
             if combined_occurr[entries][1] == 1:
                 D_first_state[state].append(combined_occurr[entries])
         print("Combined database of state :", state, " of first occurrences")
         print(D_first_state)
-        # 2)
 
+        # 4) Take all the not-first occurrences
+        good_presence = set(combined_occurr).difference(D_first_state[state])
+        print("Good positions for state: ", state)
+        print(good_presence)
 
-        # first transition: dataset = whole dictionary dataset_pos and dataset_neg
-        valid_items = [k for k in freq_items]
-        print("valid items")
-        print(valid_items)
-        #
+        # 5) Compute the
+        for item in valid_items:
+            new_state = [*state, item]
+            print("new state [*state,j]", item)
+            print(new_state)
+            Dj = {}
+            for k in valid_items:
+                print("considered item in [valid items]", k)
+                # if len(set(combine_list(k, dataset_pos, dataset_neg)).difference(combined_occurr)) != 0:
+
 
     def spade(d_pos, d_neg, supp_pos, supp_neg, k):
 
