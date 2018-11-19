@@ -1,6 +1,5 @@
-import re
-import sys
-
+import itertools
+from copy import deepcopy
 
 class Dataset:
     """Utility class to manadirge a dataset stored in a external file."""
@@ -50,24 +49,91 @@ class Dataset:
                 d[symbol].append((counter, id))
         return d
 
-# SEQUENCE MINING ALGORITHM
+# freq_dict: {max_freq:[item]}
+freq_dict = {}
+# support = {(item): (supp_pos, supp_neg)}
+supp_dict = {}
 
+class SearchNode:
+    # constructor: each node has a reference to
+    def __init__(self,name,node,dict_pos,dict_neg):
+        self.name = name
+        self.node = node
+        self.dataset_pos = dict_pos
+        self.dataset_neg = dict_neg
 
+    def compute_support(self):
+        # compute support of the nodes
 
-def sequence_mining(filepath1, filepath2, k):
-    dataset_pos = Dataset(filepath1)
-    dataset_neg = Dataset(filepath2)
+        # 1) Get all the possible sibling of a node
+        candidates_children = set(self.dataset_pos.keys()).union(set(self.dataset_neg.keys()))
+        # 2) Compute support of (item+y), with y = each possible candidates children
+        for item in candidates_children:
+            pos_supp = set()
+            neg_supp = set()
+            if item in self.dataset_pos:
+                # item in pos dataset
+                for occurr in self.dataset_pos[item]:
+                    # screening its occurrences
+                    pos_supp.add(occurr[0])
+            else:
+                # item in neg dataset
+                for occurr in self.dataset_neg[item]:
+                    # screening its occurrences
+                    neg_supp.add(occurr[0])
+            # update the supp dictionary
+            supp_dict[tuple(self.name + [item])] = (len(pos_supp),len(neg_supp))
+            # update the freq_dict
+            self.update_freq_dict(item, len(pos_supp)+len(neg_supp), k)
 
-    def get_support(list_1,list_2):
-        counter = len(set([x[0] for x in list_1]).union([x[0] for x in list_2]))
-        return counter
+    def update_freq_dict(self, item, item_support, k):
+        # self = node, item = name of the node
+        # combined supp already present in the freq_dict, not max length
+        if item_support in freq_dict:
+            freq_dict[item_support].append(self.name + ([item]))
+        # max length reached
+        elif len(freq_dict) == k:
+            min_freq = min(freq_dict.keys())
+            if item_support > min_freq:
+                del freq_dict[min_freq]
+                freq_dict[item_support] = [self.name + ([item])]
+        # combined supp not present, not max length
+        else:
+            freq_dict[item_support] = [self.name + ([item])]
 
-    def get_first(itemset,dataset):
+    def gerenate_children(self):
+        # One node can generate its children
 
+        # 1) Check support of its children
+    #    self.compute_support()
+        # 2) Update freq_dict --> done directly inside compute_support each time I had something
+        # 3) Take all the frequent items in freq_dict
+        possible_children = [items for freq, items in freq_dict.items()]
+        # take just the names
+        possible_children = set([names[-1] for names in list(itertools.chain.from_iterable(possible_children))])
+        print(possible_children)
+        # take them just once
+        # 4) Generate all the combinations
+        #for child in possible_children:
+        # 5) Look if there is a projected database of child
+
+    def project_dB(self, freq_dict, item, dataset):
+        # 1) Release a copy of the dataset
+        temp_dict = deepcopy(dataset)
+
+        # 2) Take just the items in dataset that are frequent (inside freq_dict)
+        temp_dict = {key:value for key,value in temp_dict.items() if key in freq_dict}
+        print("temp dict", temp_dict)
+
+        # 3) Get first occurrences
+        if item in temp_dict.keys():
+            self.get_first()
+
+    def get_first(self, itemset, dataset):
         first_occurr = {}
         for iter in range(len(dataset[itemset])):
             key = dataset[itemset][iter][0]
-            if key not in first_occurr :
+            if key not in first_occurr:
                 # transaction not present
                 first_occurr[key] = dataset[itemset][iter][1]
             else:
@@ -75,106 +141,28 @@ def sequence_mining(filepath1, filepath2, k):
                 # updating the position
                 if dataset[itemset][iter][1] < first_occurr[key]:
                     first_occurr[key] = dataset[itemset][iter][1]
-
         return first_occurr
 
-    def prune(itemset,dataset_pos):
 
-        first_occurr_POS = get_first(itemset,dataset_pos)
-        prune_dataset_POS = {itemset: list(set(dataset_pos[itemset]).difference(set(list(first_occurr_POS.items()))))}
-        possible_candidates = [x for x in dataset_pos.keys() if x != itemset]
-        print("poss cand",possible_candidates)
-        for other_items in possible_candidates:
-            for values in dataset_pos[other_items]:
-                trans, pos = values
-                if trans in first_occurr_POS:
-                    # if the trans is present: other_items comes after itemset
-                    if pos > first_occurr_POS[trans]:
-                        # print("This occ ", (trans, first_occurr_POS[trans]), "before this", (trans, pos))
-                        if other_items not in prune_dataset_POS:
-                            prune_dataset_POS[other_items] = [(trans, pos)]
-                        else:
-                            prune_dataset_POS[other_items].append((trans, pos))
-
-        print('here',prune_dataset_POS)
-
-        prune_dataset = {}
-        '''for keys in prune_dataset_POS.keys():
-            newState = (*keys, itemset)
-            newValue = prune_dataset_POS[keys]
-            prune_dataset[newState] = newValue'''
-
-        return prune_dataset_POS
-
-    def dfs(freq_dict, itemset, dataset_pos, dataset_neg, k):
-
-        # compute combined occurences: list of tuple
-        try:
-            combined_occurr = list(set(dataset_pos[itemset]).union(set(dataset_neg[itemset])))
-        except:
-            if itemset in dataset_pos[itemset]:
-                combined_occurr = dataset_pos[itemset]
-            else:
-                combined_occurr = dataset_neg[itemset]
-        # print("Combined occurrences of item: ", itemset)
-        # print(combined_occurr)
-        # comb_support = get_support(dataset_pos[itemset],dataset_neg[itemset])
-        combined_support = len(combined_occurr)
-        # print("Combined support of item: ", itemset, " = ", combined_support)
-        # save it in results:
-        if combined_support in freq_dict:
-            # comb_support is an existing key in freq_dict
-            freq_dict[combined_support].append([itemset])
-        else:
-            # comb_support not in freq_dict
-            # freq_dict is full
-            if len(freq_dict.keys()) == k:
-                # check the keys: if comb-supp < min freq
-                if combined_support < min(freq_dict.keys()):
-                    return
-                else:
-                    # remove the actual min freq
-                    del freq_dict[min(freq_dict.keys())]
-                    freq_dict[combined_support] = [itemset]
-            # freq_dict is not full
-            freq_dict[combined_support] = [itemset]
-
-        # Pruning
-        print(" ---- Creating Projected Database of item ", itemset, "----")
-
-        # create dictionary for itemset: {<transaction,first occurrence of itemset in that transaction>
-
-        prune_dataset_pos = prune(itemset,dataset_pos)
-        prune_dataset_neg = prune(itemset,dataset_neg)
-        print(prune_dataset_pos)
-        print(prune_dataset_neg)
+def sequence_mining(filepath_pos,filepath_neg,k):
+    dict_pos = Dataset(filepath_pos).get_v()
+    dict_neg = Dataset(filepath_neg).get_v()
+    print("Positive dataset")
+    print(dict_pos)
+    print("Negative dataset")
+    print(dict_neg)
 
 
-        items = list(set(prune_dataset_pos.keys()).union(set(prune_dataset_pos.keys())))
-        print(items)
-        for entry in items:
-            dfs(freq_dict,entry,prune_dataset_pos,prune_dataset_neg,k)
-
-    def spade(dataset_pos, dataset_neg, k):
-        dict_pos = dataset_pos.get_v()
-        dict_neg = dataset_neg.get_v()
-
-        # 1) Create itemsets from single items
-        valid_itemsets_pos = [k for k in dict_pos.keys()]
-        valid_itemsets_neg = [j for j in dict_neg.keys()]
-        itemsets = list(set(valid_itemsets_neg).union(set(valid_itemsets_pos)))
-
-        # 2) Crea una list vuota results
-        # results = {item: [supp_pos supp_neg supp_pos+supp_neg]}
-        freq_dict = {}
-
-        for item in itemsets:
-            dfs(freq_dict, item, dict_pos, dict_neg, k)
+    myNode = SearchNode('A', '', dict_pos, dict_neg)
 
 
-    # First call
-    spade(dataset_pos, dataset_neg, k)
 
+    """def print_frequent(freq_dict, supp_dict):
+        for kmost in freq_dict.values():
+            for value in kmost:
+                print(str(j), str(supp_dict[tuple(value)][0]), str(supp_dict[tuple(value)][1]),str(supp_dict[tuple(value)][0] + supp_dict[tuple(value)][1]))
+    print_frequent(freq_dict,supp_dict)"""
+    print(freq_dict)
 
 if __name__ == '__main__':
     # Possible tests:
@@ -182,9 +170,10 @@ if __name__ == '__main__':
     # prot2_SRC1521.txt
     # reu1_acq.txt
     # reu2_earn.txt
-
+    global k
     # sequence_mining("reu1_acq.txt","reu2_earn.txt",600)
-
+    k = 6
     # sequence_mining("prot1_PKA_group15.txt","prot2_SRC1521.txt",5)
-    sequence_mining("positive.txt","negative.txt",2)
+
+    sequence_mining("positive.txt", "negative.txt",k)
 

@@ -51,14 +51,11 @@ class Dataset:
         return d
 
 # SEQUENCE MINING ALGORITHM
-
-
-
 def sequence_mining(filepath1, filepath2, k):
     dataset_pos = Dataset(filepath1)
     dataset_neg = Dataset(filepath2)
 
-    def get_support(list_1,list_2):
+    def get_support(list_1, list_2):
         counter = len(set([x[0] for x in list_1]).union([x[0] for x in list_2]))
         return counter
 
@@ -108,37 +105,93 @@ def sequence_mining(filepath1, filepath2, k):
         else:
             freq_dict[total_supp] = [[item, list_supp[0], list_supp[1]]]
 
-    def prune(itemset,dataset_pos):
+    def prune(freq_dict, itemset, dataset_pos, dataset_neg, k_most):
 
-        first_occurr_POS = get_first(itemset,dataset_pos)
-        prune_dataset_POS = {itemset: list(set(dataset_pos[itemset]).difference(set(list(first_occurr_POS.items()))))}
-
-        possible_candidates = [x for x in dataset_pos.keys() if x != itemset]
+        # first occurrences
+        print("First occurrences of", itemset)
+        first_occurr_pos = get_first(itemset, dataset_pos)
+        print(first_occurr_pos)
+        # insert every not-first occurrences in the prune-dataset
+        #print("Inserting in prune_dataset the not-first occurrences of item", itemset)
+        prune_dataset_pos = {str(itemset+itemset): list(set(dataset_pos[itemset]).difference(set(list(first_occurr_pos.items()))))}
+        #print(prune_dataset)
+        possible_candidates_pos = [x for x in k_most if x != itemset]
         # print("poss cand",possible_candidates)
-        for other_items in possible_candidates:
+
+        for other_items in possible_candidates_pos:
+            print("Considering item", other_items, "in k-most database")
             for values in dataset_pos[other_items]:
                 trans, pos = values
-                if trans in first_occurr_POS:
+                if trans in first_occurr_pos:
                     # if the trans is present: other_items comes after itemset
-                    if pos > first_occurr_POS[trans]:
+                    if pos > first_occurr_pos[trans]:
                         # print("This occ ", (trans, first_occurr_POS[trans]), "before this", (trans, pos))
-                        if other_items not in prune_dataset_POS:
-                            prune_dataset_POS[other_items] = [(trans, pos)]
+                        if other_items not in prune_dataset_pos:
+                            prune_dataset_pos[str(itemset+other_items)] = [(trans, pos)]
                         else:
-                            prune_dataset_POS[other_items].append((trans, pos))
+                            prune_dataset_pos[str(itemset+other_items)].append((trans, pos))
 
-        return prune_dataset_POS
+            # update del freq_dict
+            update_freq_dict(freq_dict, dataset_pos[other_items], dataset_neg[other_items], other_items, k)
 
-    def dfs(freq_dict, itemset, dataset_pos, dataset_neg, k):
+        # first occurrences
+        print("First occurrences of", itemset)
+        first_occurr_neg = get_first(itemset, dataset_neg)
+        print(first_occurr_neg)
+        # insert every not-first occurrences in the prune-dataset
+        # print("Inserting in prune_dataset the not-first occurrences of item", itemset)
+        prune_dataset_neg = {str(itemset + itemset): list(set(dataset_neg[itemset]).difference(set(list(first_occurr_neg.items()))))}
+        # print(prune_dataset)
+        possible_candidates_neg = [x for x in k_most if x != itemset]
+        # print("poss cand",possible_candidates)
+
+        for other_items in possible_candidates_neg:
+            print("Considering item", other_items, "in k-most database")
+            for values in dataset_neg[other_items]:
+                trans, pos = values
+                if trans in first_occurr_neg:
+                # if the trans is present: other_items comes after itemset
+                    if pos > first_occurr_neg[trans]:
+                    # print("This occ ", (trans, first_occurr_POS[trans]), "before this", (trans, pos))
+                        if other_items not in prune_dataset_neg:
+                            prune_dataset_neg[str(itemset + other_items)] = [(trans, pos)]
+                        else:
+                            prune_dataset_neg[str(itemset + other_items)].append((trans, pos))
+
+            # update del freq_dict
+            update_freq_dict(freq_dict, dataset_neg[other_items], dataset_pos[other_items], other_items, k)
+
+        return [prune_dataset_pos, prune_dataset_neg]
+
+    def update_results(freq_dict, kmost, results, itemset):
+        y = 0
+        found = False
+        for keys, values in freq_dict.items():
+            y=0
+            for val in values:
+                if val[0] == itemset:
+                    results.append([itemset, freq_dict[keys][y][1], freq_dict[keys][y][2], keys])
+                    del_key = keys
+                    del_pos = y
+                    found = True
+                    break
+                else:
+                    y += 1
+            if found:
+                break
+
+        del freq_dict[del_key][del_pos]
+        return results
+
+    def dfs(freq_dict, results, kmost, itemset, dataset_pos, dataset_neg, k):
 
         # compute combined occurences: list of tuple
+        results = update_results(freq_dict, kmost, results, itemset)
+        print("Results")
+        print(results)
 
-        combined_occurr = list(set(dataset_pos[itemset]).union(set(dataset_neg[itemset])))
-        # print("Combined occurrences of item: ", itemset)
-        # print(combined_occurr)
-        # comb_support = get_support(dataset_pos[itemset],dataset_neg[itemset])
+        """combined_occurr = list(set(dataset_pos[itemset]).union(set(dataset_neg[itemset])))
         combined_support = len(combined_occurr)
-        # print("Combined support of item: ", itemset, " = ", combined_support)
         # save it in results:
         if combined_support in freq_dict:
             # comb_support is an existing key in freq_dict
@@ -155,24 +208,21 @@ def sequence_mining(filepath1, filepath2, k):
                     del freq_dict[min(freq_dict.keys())]
                     freq_dict[combined_support] = [itemset]
             # freq_dict is not full
-            freq_dict[combined_support] = [itemset]
+            freq_dict[combined_support] = [itemset]"""
 
-        # Pruning
-        # print(" ---- Creating Projected Database of item ", itemset, "----")
-
-        # create dictionary for itemset: {<transaction,first occurrence of itemset in that transaction>
-
-        prune_dataset_pos = prune(itemset,dataset_pos)
-        prune_dataset_neg = prune(itemset,dataset_neg)
-        #print(prune_dataset_pos)
-        #print(prune_dataset_neg)
+        [prune_dataset_pos, prune_dataset_neg] = prune(freq_dict, dataset_pos, dataset_neg, itemset, kmost)
+        print("Pruned POS dataset of item", itemset)
+        print(prune_dataset_pos)
+        print("Pruned NEG dataset of item", itemset)
+        print(prune_dataset_neg)
 
         # print(freq_dict)
 
         items = list(set(prune_dataset_pos.keys()).union(set(prune_dataset_pos.keys())))
         #print(items)
-        for entry in items:
-            dfs(freq_dict,entry,prune_dataset_pos,prune_dataset_neg,k)
+        # for entry in items:
+        if not kmost:
+            dfs(freq_dict,kmost,prune_dataset_pos,prune_dataset_neg,k)
 
 
     def spade(dataset_pos, dataset_neg, k):
@@ -183,25 +233,30 @@ def sequence_mining(filepath1, filepath2, k):
         valid_itemsets_pos = [k for k in dict_pos.keys()]
         valid_itemsets_neg = [j for j in dict_neg.keys()]
         itemsets = list(set(valid_itemsets_neg).intersection(set(valid_itemsets_pos)))
+        print("Items present in both dataset")
         print(itemsets)
 
         # 2) Compute supports
         supp_pos = get_first_support(dict_pos)
         supp_neg = get_first_support(dict_neg)
-        print(supp_neg)
+        print("Dict of support for positive dataset")
         print(supp_pos)
+        print("Dict of support for negative dataset")
+        print(supp_neg)
 
         # 2) Crea una list vuota results
         combined_support = {}
         freq_dict = {}
         for item in itemsets:
             combined_support[item] = [supp_pos[item], supp_neg[item], supp_pos[item] + supp_neg[item]]
+
+        print("Dict of combined support [pos+neg]")
         print(combined_support)
 
         # 3) Update of the frequent dictionary
         for item in itemsets:
             update_freq_dict(freq_dict, combined_support[item], item, k)
-
+        print("Dict of frequent itemse")
         print(freq_dict)
 
 
@@ -213,12 +268,13 @@ def sequence_mining(filepath1, filepath2, k):
                     k_most.append(freq_dict[key][elements][0])
             else:
                 k_most.append(freq_dict[key][0][0])
-
+        print("K-most frequent items")
         print(k_most)
 
         # 5) DFS on k-most frequent items
+        results = []
         for i in k_most:
-            dfs(freq_dict, i, dict_pos, dict_neg, k)
+            dfs(freq_dict, results, k_most, i, dict_pos, dict_neg, k)
 
     # First call
     spade(dataset_pos, dataset_neg, k)
