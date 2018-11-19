@@ -62,6 +62,21 @@ def sequence_mining(filepath1, filepath2, k):
         counter = len(set([x[0] for x in list_1]).union([x[0] for x in list_2]))
         return counter
 
+    def get_first_support(dict_symbol):
+        t_id_set = set()
+        dict_supp = {}
+        for item in dict_symbol:
+            # list of (t_id,t_pos_id)
+            value = dict_symbol[item]
+            for pair in value:
+                t_id_set.add(pair[0])
+                dict_supp[item] = len(t_id_set)
+
+            t_id_set = set()
+
+        return dict_supp
+
+
     def get_first(itemset,dataset):
 
         first_occurr = {}
@@ -78,13 +93,28 @@ def sequence_mining(filepath1, filepath2, k):
 
         return first_occurr
 
+    def update_freq_dict(freq_dict, list_supp, item, k):
+        # combined supp already present in the freq_dict, not max length
+        total_supp = list_supp[2]
+        if total_supp in freq_dict:
+            freq_dict[total_supp].append([item, list_supp[0],list_supp[1]])
+        # max length reached
+        elif len(freq_dict) == k:
+            min_freq = min(freq_dict.keys())
+            if total_supp > min_freq:
+                del freq_dict[min_freq]
+                freq_dict[total_supp] = [item, list_supp[0], list_supp[1]]
+        # combined supp not present, not max length
+        else:
+            freq_dict[total_supp] = [[item, list_supp[0], list_supp[1]]]
+
     def prune(itemset,dataset_pos):
 
         first_occurr_POS = get_first(itemset,dataset_pos)
         prune_dataset_POS = {itemset: list(set(dataset_pos[itemset]).difference(set(list(first_occurr_POS.items()))))}
 
         possible_candidates = [x for x in dataset_pos.keys() if x != itemset]
-        print("poss cand",possible_candidates)
+        # print("poss cand",possible_candidates)
         for other_items in possible_candidates:
             for values in dataset_pos[other_items]:
                 trans, pos = values
@@ -128,7 +158,7 @@ def sequence_mining(filepath1, filepath2, k):
             freq_dict[combined_support] = [itemset]
 
         # Pruning
-        print(" ---- Creating Projected Database of item ", itemset, "----")
+        # print(" ---- Creating Projected Database of item ", itemset, "----")
 
         # create dictionary for itemset: {<transaction,first occurrence of itemset in that transaction>
 
@@ -137,7 +167,7 @@ def sequence_mining(filepath1, filepath2, k):
         #print(prune_dataset_pos)
         #print(prune_dataset_neg)
 
-        print(freq_dict)
+        # print(freq_dict)
 
         items = list(set(prune_dataset_pos.keys()).union(set(prune_dataset_pos.keys())))
         #print(items)
@@ -152,16 +182,43 @@ def sequence_mining(filepath1, filepath2, k):
         # 1) Create itemsets from single items
         valid_itemsets_pos = [k for k in dict_pos.keys()]
         valid_itemsets_neg = [j for j in dict_neg.keys()]
-        itemsets = list(set(valid_itemsets_neg).union(set(valid_itemsets_pos)))
+        itemsets = list(set(valid_itemsets_neg).intersection(set(valid_itemsets_pos)))
         print(itemsets)
 
+        # 2) Compute supports
+        supp_pos = get_first_support(dict_pos)
+        supp_neg = get_first_support(dict_neg)
+        print(supp_neg)
+        print(supp_pos)
+
         # 2) Crea una list vuota results
-        # results = {item: [supp_pos supp_neg supp_pos+supp_neg]}
+        combined_support = {}
         freq_dict = {}
+        for item in itemsets:
+            combined_support[item] = [supp_pos[item], supp_neg[item], supp_pos[item] + supp_neg[item]]
+        print(combined_support)
 
-        #for item in itemsets:
-        #    dfs(freq_dict, item, dict_pos, dict_neg, k)
+        # 3) Update of the frequent dictionary
+        for item in itemsets:
+            update_freq_dict(freq_dict, combined_support[item], item, k)
 
+        print(freq_dict)
+
+
+        # 4) Extract k-most frequent items
+        k_most = []
+        for key in freq_dict:
+            if len(freq_dict[key]) != 1:
+                for elements in range(len(freq_dict[key])):
+                    k_most.append(freq_dict[key][elements][0])
+            else:
+                k_most.append(freq_dict[key][0][0])
+
+        print(k_most)
+
+        # 5) DFS on k-most frequent items
+        for i in k_most:
+            dfs(freq_dict, i, dict_pos, dict_neg, k)
 
     # First call
     spade(dataset_pos, dataset_neg, k)
