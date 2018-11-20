@@ -1,7 +1,6 @@
 import itertools
-from copy import deepcopy
 from collections import defaultdict
-
+from copy import deepcopy
 
 # freq_dict: {max_freq:[item]}
 freq_dict = {}
@@ -212,31 +211,16 @@ def fill_dataset(itemset, dataset):
                         new_dataset[j].append(k)
     return new_dataset
 
-def print_frequent(freq_dict, supp_dict):
-    #print("Printing")
-    for kmost in freq_dict.values():
-        for value in kmost:
-            print(str(value), str(supp_dict[tuple(value)][0]), str(supp_dict[tuple(value)][1]),str(supp_dict[tuple(value)][0] + supp_dict[tuple(value)][1]))
+pos_filepath = 'positive.txt'
+neg_filepath = 'negative.txt'
 
+# sequence_mining("reu1_acq.txt","reu2_earn.txt",600)
 
-def main():
-    global k
-    ##    pos_filepath = sys.argv[1] # filepath to positive class file
-    ##    neg_filepath = sys.argv[2] # filepath to negative class file
-    ##    k = int(sys.argv[3])
-    # TODO: read the dataset files and call your miner to print the top k itemsets
-    # test constnats
-    pos_filepath = 'positive.txt'
-    neg_filepath = 'negative.txt'
+# sequence_mining("prot1_PKA_group15.txt","prot2_SRC1521.txt",5)
+k = 6
+sequence_mining(pos_filepath, neg_filepath, k)
 
-    # sequence_mining("reu1_acq.txt","reu2_earn.txt",600)
-
-    # sequence_mining("prot1_PKA_group15.txt","prot2_SRC1521.txt",5)
-    k = 7
-    if __name__ == "__main__":
-        sequence_mining(pos_filepath, neg_filepath, k)
-        # sequence_mining("reu1_acq.txt", "reu2_earn.txt", 600)
-        print_frequent(freq_dict, supp_dict)
-
-
-main()
+min_sup = min(freq_dict.keys())
+for itemset, (supp1, supp2) in supp_dict.items():
+    if supp1 + supp2 >= min_sup:
+        print("[{}]".format(", ".join(itemset)), supp1, supp2, supp1 + supp2)
