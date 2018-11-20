@@ -69,25 +69,23 @@ class SearchNode:
         candidates_children = set(self.dataset_pos.keys()).union(set(self.dataset_neg.keys()))
         # 2) Compute support of (item+y), with y = each possible candidates children
         for item in candidates_children:
-            pos_supp = set()
-            neg_supp = set()
             if item in self.dataset_pos:
-                # item in pos dataset
-                for occurr in self.dataset_pos[item]:
-                    # screening its occurrences
-                    pos_supp.add(occurr[0])
+                pos_supp = len(set([x[0] for x in self.dataset_pos[item]]))
+            else:
+                pos_supp = 0
+
             if item in self.dataset_neg:
-                # item in neg dataset
-                for occurr in self.dataset_neg[item]:
-                    # screening its occurrences
-                    neg_supp.add(occurr[0])
+                neg_supp = len(set([x[0] for x in self.dataset_neg[item]]))
+            else:
+                neg_supp = 0
+
             # update the supp dictionary
-            supp_dict[tuple(self.name + [item])] = (len(pos_supp), len(neg_supp))
+            supp_dict[(*self.name, item)] = pos_supp, neg_supp
             # print("supp_dict")
             # print(supp_dict)
             # update the freq_dict
-            total_supp = len(pos_supp)+len(neg_supp)
-            self.update_freq_dict(item, total_supp , k)
+            total_supp = pos_supp + neg_supp
+            self.update_freq_dict(item, total_supp, k)
 
     def update_freq_dict(self, item, item_support, k):
         # print("---- Update Frequency ----")
