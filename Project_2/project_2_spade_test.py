@@ -93,18 +93,16 @@ class SearchNode:
         # self = node, item = name of the node
         # combined supp already present in the freq_dict, not max length
         if item_support in freq_dict.keys():
-            freq_dict[item_support].append(self.name + ([item]))
+            freq_dict[item_support].append( (*self.name, item) )
         # max length reached
         elif len(freq_dict) == k:
             min_freq = min(freq_dict.keys())
             if item_support > min_freq:
                 del freq_dict[min_freq]
-                freq_dict[item_support] = [self.name + ([item])]
+                freq_dict[item_support] = [ (*self.name, item) ]
         # combined supp not present, not max length
         else:
-            freq_dict[item_support] = [self.name + ([item])]
-        # print("freq_dict")
-        # print(freq_dict)
+            freq_dict[item_support] = [ (*self.name, item) ]
 
     def generate_children(self):
         # One node can generate its children
@@ -118,10 +116,8 @@ class SearchNode:
         # 4) Generate all the combinations
         possible_children = [names[-1] for names in list(itertools.chain.from_iterable(possible_children))]
         possible_children = set(possible_children)
-        # print("possible_children")
-        # print(possible_children)
+
         # take them just once
-        # print("here")
         for search_element in possible_children:
             # print("here2")
             if self.dataset_pos != {} and self.dataset_neg != {}:
@@ -144,40 +140,39 @@ class SearchNode:
 
     def project_dB(self, flip_dic, search_term, table):
         #print("--- projected database of element: ", search_term, "---")
-        new_db = deepcopy(table)
-        new_db = {k: v for k, v in new_db.items() if k in flip_dic}
+        new_db = {k: v for k, v in table.items() if k in flip_dic}
         # print("new_db", new_db)
 
         # now i have a dictionary of relevant items
         # need to check the first occurance of each trans of the search term
         # then remove all that are before the first occurance
-        newer_db = defaultdict(list)
         first_occurance = {}
 
         #print(" Pruning ")
         newer_db = defaultdict(list)
+
         if search_term in new_db.keys():
             # Get first occurrences of element
             #prune_dataset = fill_dataset(element, new_db)
-                for j in (new_db[search_term]):
-                    if j[0] not in first_occurance:
-                        first_occurance[j[0]] = j[1]
-                    else:
-                        newer_db[search_term].append(j)
+            first_occurance = {}
+            for tx, pos in new_db[search_term]:
+                if tx in first_occurance:
+                    # update if already there
+                    first_occurance[tx] = min(first_occurance[tx], pos)
+                else:
+                    # add new value
+                    first_occurance[tx] = pos
 
-                for j in new_db:
+            for item, tx_pos_list in new_db.items():
+                for tx, pos in new_db[item]:
+                    if tx not in newer_db[search_term] and \
+                       tx in first_occurance and \
+                       pos > first_occurance[tx]:
+                        newer_db[item].append((tx, pos))
 
-                    for k in new_db[j]:
-                        if k not in newer_db[search_term]:
-                            if k[0] in first_occurance and k[1] > first_occurance[k[0]]:
-                                newer_db[j].append(k)
-
-        #print("prune dataset of items", search_term)
-        #print(newer_db)
-        for keys in newer_db.keys():
             return {k: v for k, v in newer_db.items() if newer_db[k] != []}
-        return {}
 
+        return {}
 
 def sequence_mining(filepath_pos,filepath_neg,k):
     dict_pos = Dataset(filepath_pos).get_v()
