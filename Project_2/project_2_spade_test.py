@@ -138,7 +138,6 @@ class SearchNode:
 
         if search_term in new_db.keys():
             # Get first occurrences of element
-            #prune_dataset = fill_dataset(element, new_db)
             first_occurance = {}
             for tx, pos in new_db[search_term]:
                 if tx in first_occurance:
@@ -171,30 +170,11 @@ def sequence_mining(filepath_pos,filepath_neg,k):
     empty_node = SearchNode([], '', dict_pos, dict_neg)
     empty_node.generate_children()
 
-
-def fill_dataset(itemset, dataset):
-    #print("--- Get first ---")
-    new_dataset = {}
-    first_occurr = {}
-    if itemset in dataset.keys():
-        for j in (dataset[itemset]):
-            if j[0] not in first_occurr:
-                first_occurr[j[0]] = j[1]
-            else:
-                new_dataset[itemset].append(j)
-        for j in dataset:
-            for k in dataset[j]:
-                if k not in new_dataset[itemset]:
-                    if k[0] in first_occurr and k[1] > first_occurr[k[0]]:
-                        new_dataset[j].append(k)
-    return new_dataset
+### main
 
 pos_filepath = 'positive.txt'
 neg_filepath = 'negative.txt'
 
-# sequence_mining("reu1_acq.txt","reu2_earn.txt",600)
-
-# sequence_mining("prot1_PKA_group15.txt","prot2_SRC1521.txt",5)
 k = 6
 sequence_mining(pos_filepath, neg_filepath, k)
 
