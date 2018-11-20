@@ -111,32 +111,18 @@ class SearchNode:
         self.compute_support()
         # 2) Update freq_dict --> done directly inside compute_support each time I had something
         # 3) Take all the frequent items in freq_dict
-        possible_children = [items for freq, items in freq_dict.items()]
-        # take just the names
-        # 4) Generate all the combinations
-        possible_children = [names[-1] for names in list(itertools.chain.from_iterable(possible_children))]
-        possible_children = set(possible_children)
+        possible_children = set(self.dataset_pos.keys()).union(set(self.dataset_neg.keys()))
 
         # take them just once
         for search_element in possible_children:
             # print("here2")
-            if self.dataset_pos != {} and self.dataset_neg != {}:
-                #print("both not {}")
-                new_dict_pos = self.project_dB(possible_children, search_element, self.dataset_pos)
-                new_dict_neg = self.project_dB(possible_children, search_element, self.dataset_neg)
-            elif self.dataset_pos == {} and self.dataset_neg != {}:
-                #print("pos = {}")
-                new_dict_pos = {}
-                new_dict_neg = self.project_dB(possible_children, search_element, self.dataset_neg)
-            elif self.dataset_pos != {} and self.dataset_neg == {}:
-                #print("neg = {}")
-                new_dict_pos = self.project_dB(possible_children, search_element, self.dataset_pos)
-                new_dict_neg = {}
-            else:
-                #print("both = {}")
-                return
-            # print("search node")
-            SearchNode(self.name + [search_element], search_element, new_dict_pos, new_dict_neg).generate_children()
+            new_dict_pos = self.project_dB(possible_children, search_element, self.dataset_pos)
+            new_dict_neg = self.project_dB(possible_children, search_element, self.dataset_neg)
+
+            if len(new_dict_pos) > 0 or len(new_dict_neg) > 0:
+                # print("search node")
+                new_name = (*self.name, search_element)
+                SearchNode(new_name, search_element, new_dict_pos, new_dict_neg).generate_children()
 
     def project_dB(self, flip_dic, search_term, table):
         #print("--- projected database of element: ", search_term, "---")
@@ -149,7 +135,6 @@ class SearchNode:
         first_occurance = {}
 
         #print(" Pruning ")
-        newer_db = defaultdict(list)
 
         if search_term in new_db.keys():
             # Get first occurrences of element
@@ -163,6 +148,7 @@ class SearchNode:
                     # add new value
                     first_occurance[tx] = pos
 
+            newer_db = defaultdict(list)
             for item, tx_pos_list in new_db.items():
                 for tx, pos in new_db[item]:
                     if tx not in newer_db[search_term] and \
@@ -181,7 +167,6 @@ def sequence_mining(filepath_pos,filepath_neg,k):
     #print(dict_pos)
     #print("Negative dataset")
     #print(dict_neg)
-
 
     empty_node = SearchNode([], '', dict_pos, dict_neg)
     empty_node.generate_children()
