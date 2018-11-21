@@ -1,13 +1,14 @@
 import itertools
 from collections import defaultdict
-from sortedcontainers import SortedDict
-from copy import deepcopy
+import numpy as np
 import sys
 
-# freq_dict: {max_freq:[item]}
-freq_dict = {}
-# support = {(item): (supp_pos, supp_neg)}
+# freq_dict: {(item): wracc}
+wracc_saver = {}
+# supp_dict = {(item): (supp_pos, supp_neg)}
 supp_dict = {}
+# wracc_dict = {wracc:[item]}
+wracc_dict = {}
 class Dataset:
     """Utility class to manadirge a dataset stored in a external file."""
 
@@ -54,7 +55,7 @@ class Dataset:
                 d[symbol] = [(counter, id)]
             else:
                 d[symbol].append((counter, id))
-        return d
+        return [d,counter]
 
 class SearchNode:
     # constructor: each node has a reference to
@@ -83,31 +84,33 @@ class SearchNode:
 
             # update the supp dictionary
             supp_dict[(*self.name, item)] = pos_supp, neg_supp
+            #print("supp_dict[", (*self.name, item), "] = ", pos_supp, neg_supp)
+            item_wracc = compute_wracc(pos_supp, neg_supp)
+            wracc_saver[(*self.name, item)] = item_wracc
+            #print("wracc_saver[", (*self.name, item), "] = ", item_wracc)
             # print("supp_dict")
             # print(supp_dict)
             # update the freq_dict
-            total_supp = pos_supp + neg_supp
-            self.update_freq_dict(item, total_supp, k)
+            self.update_wracc_dict(item, item_wracc, k)
 
 
-
-
-    def update_freq_dict(self, item, item_support, k):
+    def update_wracc_dict(self, item, item_wracc, k):
         # print("---- Update Frequency ----")
         # print("Method called by item ", item)
         # self = node, item = name of the node
         # combined supp already present in the freq_dict, not max length
-        if item_support in freq_dict.keys():
-            freq_dict[item_support].append( (*self.name, item) )
+        if item_wracc in wracc_dict.keys():
+            wracc_dict[item_wracc].append( (*self.name, item) )
         # max length reached
-        elif len(freq_dict) == k:
-            min_freq = min(freq_dict.keys())
-            if item_support > min_freq:
-                del freq_dict[min_freq]
-                freq_dict[item_support] = [ (*self.name, item) ]
+        elif len(wracc_dict) == k:
+            min_wracc = min(wracc_dict.keys())
+            if item_wracc > min_wracc:
+                del wracc_dict[min_wracc]
+                wracc_dict[item_wracc] = [ (*self.name, item) ]
         # combined supp not present, not max length
         else:
-            freq_dict[item_support] = [ (*self.name, item) ]
+            wracc_dict[item_wracc] = [ (*self.name, item) ]
+        #print("wracc_dict", wracc_dict)
 
 
     def generate_children(self):
@@ -118,23 +121,26 @@ class SearchNode:
         # 2) Update freq_dict --> done directly inside compute_support each time I had something
         # 3) Take all the frequent items in freq_dict
         possible_children = set(self.dataset_pos.keys()).union(set(self.dataset_neg.keys()))
-
+        #print("possible children: ", possible_children)
         # take them just once
         for search_element in possible_children:
             # element was not added to the frequent dictionary
-            if sum(supp_dict[(*self.name, search_element)]) < min(freq_dict.keys()):
+            # if sum(supp_dict[(*self.name, search_element)]) < min(wracc_dict.keys()):
+            threshold = (min(wracc_dict.keys())*(np.square((N+P)))/N)
+            #print("threshold = ", threshold)
+            #print("pos supp of ", (*self.name, search_element), " = " ,supp_dict[(*self.name, search_element)][0])
+            if supp_dict[(*self.name, search_element)][0] >= threshold:
                 # proceed to next iteration, without doing anithing for current value
-                continue
+                # if flag == true{ new_dict_pos = ...}
+                new_dict_pos = self.project_dB(possible_children, search_element, self.dataset_pos)
+                new_dict_neg = self.project_dB(possible_children, search_element, self.dataset_neg)
 
-            # print("here2")
-            # if flag == true{ new_dict_pos = ...}
-            new_dict_pos = self.project_dB(possible_children, search_element, self.dataset_pos)
-            new_dict_neg = self.project_dB(possible_children, search_element, self.dataset_neg)
-
-            if len(new_dict_pos) > 0 or len(new_dict_neg) > 0:
-                # print("search node")
-                new_name = (*self.name, search_element)
-                SearchNode(new_name, search_element, new_dict_pos, new_dict_neg).generate_children()
+                #print("new dict pos of item = ", search_element, " = ", len(new_dict_pos))
+                #print("new dict neg of item = ", search_element, " = ", len(new_dict_neg))
+                if len(new_dict_pos) > 0 or len(new_dict_neg) > 0:
+                    #print("search node")
+                    new_name = (*self.name, search_element)
+                    SearchNode(new_name, search_element, new_dict_pos, new_dict_neg).generate_children()
 
     def project_dB(self, flip_dic, search_term, table):
         #print("--- projected database of element: ", search_term, "---")
@@ -171,12 +177,15 @@ class SearchNode:
 
         return {}
 
+
 def sequence_mining(filepath_pos, filepath_neg, k):
-    dict_pos = Dataset(filepath_pos).get_v()
-    dict_neg = Dataset(filepath_neg).get_v()
-    #print("Positive dataset")
+    global P
+    global N
+    [dict_pos, P] = Dataset(filepath_pos).get_v()
+    [dict_neg, N] = Dataset(filepath_neg).get_v()
+    #print("P = ", P)
     #print(dict_pos)
-    #print("Negative dataset")
+    #print("N = ", N)
     #print(dict_neg)
 
     empty_node = SearchNode([], '', dict_pos, dict_neg)
@@ -189,48 +198,34 @@ def sequence_mining(filepath_pos, filepath_neg, k):
 # sequence_mining("reu1_acq.txt","reu2_earn.txt",k)
 # sequence_mining("prot1_PKA_group15.txt","prot2_SRC1521.txt",k)
 
-def sort_by_support(pc):
-    pc_tuple = [(x,) for x in pc]
-    val = []
-    keys = {}
-    for i in pc_tuple:
-        total_supp = supp_dict[i][0] + supp_dict[i][1]
-        val.append(total_supp)
-        keys[i] = total_supp
+def compute_wracc(px, nx):
+    return round(((P/(P+N))*(N/(P+N)))*((px/P)-(nx/N)),5)
 
-    sorted_keys = list(keys.keys())
-    # print(sorted_keys)
-    pc_try = [k for k in sorted_keys]
-    possible_children = [i[-1] for i in list(itertools.chain.from_iterable(pc_try))]
-
-    return possible_children
-
-
-def print_frequent(freq_dict,supp_dict):
-    min_sup = min(freq_dict.keys())
-    for itemset, (supp1, supp2) in supp_dict.items():
-        if supp1 + supp2 >= min_sup:
-            print("[{}]".format(", ".join(itemset)), supp1, supp2, supp1 + supp2)
+def print_frequent(wracc_dict,supp_dict,wracc_saver):
+    min_wracc = min(wracc_dict.keys())
+    for (itemset) in wracc_saver.keys():
+        if wracc_saver[itemset] >= min_wracc:
+            print("[{}]".format(", ".join(itemset)), supp_dict[itemset][0], supp_dict[itemset][1], wracc_saver[itemset])
 
 
 def main():
     global k
-    # pos_filepath = sys.argv[1] # filepath to positive class file
-    # neg_filepath = sys.argv[2] # filepath to negative class file
-    # k = int(sys.argv[3])
-    k = 6
-    pos_filepath = "positive.txt"
-    neg_filepath = "negative.txt"
+    pos_filepath = sys.argv[1] # filepath to positive class file
+    neg_filepath = sys.argv[2] # filepath to negative class file
+    k = int(sys.argv[3])
+    #k = 6
+    #pos_filepath = "positive.txt"
+    #neg_filepath = "negative.txt"
     #pos_filepath = "reu1_acq.txt"
     #neg_filepath = "reu2_earn.txt"
     # pos_filepath = "prot1_PKA_group15.txt"
     # neg_filepath = "prot2_SRC1521.txt"
 
     sequence_mining(pos_filepath, neg_filepath, k)
-    print_frequent(freq_dict,supp_dict)
+    print_frequent(wracc_dict,supp_dict,wracc_saver)
 
-    #print("supp dict")
-    #print(supp_dict)
+    #print("wracc dict")
+    #print(wracc_dict)
     #print("freq dict")
     #print(freq_dict)
 
