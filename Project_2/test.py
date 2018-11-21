@@ -1,14 +1,24 @@
+from sortedcontainers import SortedDict
 import itertools
-from copy import deepcopy
 
-k = {7: [('A','B'),('C','E')], 2: ('C','D')}
-l = {7: ('Ck')}
-print(k.items())
-possible_children = [items for freq, items in k.items()]
-print(possible_children)
-possible_children = [i for i in list(itertools.chain.from_iterable(possible_children))]
-print(possible_children)
 
-print(deepcopy(k))
-new_db = {r:v for r,v in k.items() if r in l}
-print("new",new_db)
+supp_dict = {('A',):(3,3),('C',):(1,2),('A','C',):(4,5)}
+pc_contuple = [('A',),('C',)]
+val = []
+keys = {}
+for i in pc_contuple:
+    total_supp = supp_dict[i][0]+supp_dict[i][1]
+    val.append(total_supp)
+    keys[i] = total_supp
+
+print('val',val)
+print('ll',keys)
+
+sorted_keys = list(keys.keys())
+print(sorted_keys)
+
+flip_dic = [k for k in sorted_keys]
+flip_dic = [i[-1] for i in list(itertools.chain.from_iterable(flip_dic))]
+print(flip_dic)
+
+
