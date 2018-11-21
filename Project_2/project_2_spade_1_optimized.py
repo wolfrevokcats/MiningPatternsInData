@@ -1,7 +1,5 @@
 import itertools
 from collections import defaultdict
-from sortedcontainers import SortedDict
-from copy import deepcopy
 import sys
 
 # freq_dict: {max_freq:[item]}
@@ -215,19 +213,19 @@ def print_frequent(freq_dict,supp_dict):
 
 def main():
     global k
-    # pos_filepath = sys.argv[1] # filepath to positive class file
-    # neg_filepath = sys.argv[2] # filepath to negative class file
-    # k = int(sys.argv[3])
-    k = 6
-    pos_filepath = "positive.txt"
-    neg_filepath = "negative.txt"
+    pos_filepath = sys.argv[1] # filepath to positive class file
+    neg_filepath = sys.argv[2] # filepath to negative class file
+    k = int(sys.argv[3])
+    #k = 6
+    #pos_filepath = "positive.txt"
+    #neg_filepath = "negative.txt"
     #pos_filepath = "reu1_acq.txt"
     #neg_filepath = "reu2_earn.txt"
     # pos_filepath = "prot1_PKA_group15.txt"
     # neg_filepath = "prot2_SRC1521.txt"
 
     sequence_mining(pos_filepath, neg_filepath, k)
-    #print_frequent(freq_dict,supp_dict)
+    print_frequent(freq_dict,supp_dict)
 
     #print("supp dict")
     #print(supp_dict)
