@@ -117,12 +117,15 @@ class SearchNode:
         self.compute_support()
         # 2) Update freq_dict --> done directly inside compute_support each time I had something
         # 3) Take all the frequent items in freq_dict
-        possible_children_notsorted = set(self.dataset_pos.keys()).union(set(self.dataset_neg.keys()))
-        # sort the possible children in order of support
-        possible_children = sort_by_support(possible_children_notsorted)
+        possible_children = set(self.dataset_pos.keys()).union(set(self.dataset_neg.keys()))
 
         # take them just once
         for search_element in possible_children:
+            # element was not added to the frequent dictionary
+            if supp_dict[(*self.name, search_element)] < min(freq_dict.keys()):
+                # proceed to next iteration, without doing anithing for current value
+                continue
+
             # print("here2")
             # if flag == true{ new_dict_pos = ...}
             new_dict_pos = self.project_dB(possible_children, search_element, self.dataset_pos)
