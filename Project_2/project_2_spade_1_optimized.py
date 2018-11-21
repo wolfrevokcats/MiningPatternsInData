@@ -122,7 +122,7 @@ class SearchNode:
         # take them just once
         for search_element in possible_children:
             # element was not added to the frequent dictionary
-            if supp_dict[(*self.name, search_element)] < min(freq_dict.keys()):
+            if sum(supp_dict[(*self.name, search_element)]) < min(freq_dict.keys()):
                 # proceed to next iteration, without doing anithing for current value
                 continue
 
