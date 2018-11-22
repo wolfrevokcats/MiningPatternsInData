@@ -99,6 +99,7 @@ class SearchNode:
         # print("Method called by item ", item)
         # self = node, item = name of the node
         # combined supp already present in the freq_dict, not max length
+        # check if there are some subpatterns in wracc_dict, if so, extract them
         if item_wracc in wracc_dict.keys():
             wracc_dict[item_wracc].append( (*self.name, item) )
         # max length reached
@@ -121,24 +122,17 @@ class SearchNode:
         # 2) Update freq_dict --> done directly inside compute_support each time I had something
         # 3) Take all the frequent items in freq_dict
         possible_children = set(self.dataset_pos.keys()).union(set(self.dataset_neg.keys()))
-        #print("possible children: ", possible_children)
-        # take them just once
+
         for search_element in possible_children:
             # element was not added to the frequent dictionary
             # if sum(supp_dict[(*self.name, search_element)]) < min(wracc_dict.keys()):
             threshold = (min(wracc_dict.keys())*(np.square((N+P)))/N)
-            #print("threshold = ", threshold)
-            #print("pos supp of ", (*self.name, search_element), " = " ,supp_dict[(*self.name, search_element)][0])
+
             if supp_dict[(*self.name, search_element)][0] >= threshold:
-                # proceed to next iteration, without doing anithing for current value
-                # if flag == true{ new_dict_pos = ...}
                 new_dict_pos = self.project_dB(possible_children, search_element, self.dataset_pos)
                 new_dict_neg = self.project_dB(possible_children, search_element, self.dataset_neg)
 
-                #print("new dict pos of item = ", search_element, " = ", len(new_dict_pos))
-                #print("new dict neg of item = ", search_element, " = ", len(new_dict_neg))
                 if len(new_dict_pos) > 0 or len(new_dict_neg) > 0:
-                    #print("search node")
                     new_name = (*self.name, search_element)
                     SearchNode(new_name, search_element, new_dict_pos, new_dict_neg).generate_children()
 
@@ -150,7 +144,6 @@ class SearchNode:
         # now i have a dictionary of relevant items
         # need to check the first occurance of each trans of the search term
         # then remove all that are before the first occurance
-        first_occurance = {}
 
         #print(" Pruning ")
 
@@ -210,22 +203,22 @@ def print_frequent(wracc_dict,supp_dict,wracc_saver):
 
 def main():
     global k
-    pos_filepath = sys.argv[1] # filepath to positive class file
-    neg_filepath = sys.argv[2] # filepath to negative class file
-    k = int(sys.argv[3])
-    #k = 6
-    #pos_filepath = "positive.txt"
-    #neg_filepath = "negative.txt"
+    #pos_filepath = sys.argv[1] # filepath to positive class file
+    #neg_filepath = sys.argv[2] # filepath to negative class file
+    #k = int(sys.argv[3])
+    k = 6
+    pos_filepath = "positive.txt"
+    neg_filepath = "negative.txt"
     #pos_filepath = "reu1_acq.txt"
     #neg_filepath = "reu2_earn.txt"
     # pos_filepath = "prot1_PKA_group15.txt"
     # neg_filepath = "prot2_SRC1521.txt"
 
     sequence_mining(pos_filepath, neg_filepath, k)
-    print_frequent(wracc_dict,supp_dict,wracc_saver)
+    #print_frequent(wracc_dict,supp_dict,wracc_saver)
 
-    #print("wracc dict")
-    #print(wracc_dict)
+    print("wracc dict")
+    print(wracc_dict)
     #print("freq dict")
     #print(freq_dict)
 

@@ -88,15 +88,31 @@ class SearchNode:
             wracc_saver[(*self.name, item)] = item_wracc
             self.update_wracc_dict(item, item_wracc, k)
 
-
     def update_wracc_dict(self, item, item_wracc, k):
         # print("---- Update Frequency ----")
-        # print("Method called by item ", item)
-        # self = node, item = name of the node
-        # combined supp already present in the freq_dict, not max length
+        # 1) you check for super pattern not subpattern (with same support)
+        # ! support(super) <= support(sub)
         if item_wracc in wracc_dict.keys():
-             # do the check if a subset or superset is present
-            wracc_dict[item_wracc].append( (*self.name, item) )
+            print("item_wracc = ",item_wracc)
+            print("supports of ", item, (supp_dict[(tuple(item,))][0],supp_dict[(tuple(item,))][1]))
+            for (patterns) in wracc_dict[item_wracc]:
+                # item = B,C, super = A,B,C
+                print("patterns = ",patterns)
+                print("supports of ", patterns, (supp_dict[patterns][0],supp_dict[patterns][1]))
+                print(self.is_sub_sup_pattern(patterns,item) == True)
+                print((supp_dict[(tuple(item,))][0], supp_dict[(tuple(item,))][1]) == ((supp_dict[patterns][0], supp_dict[patterns][1])))
+                """if (self.is_sub_sup_pattern(patterns,item) == True) and (supp_dict[(tuple(item,))][0], supp_dict[(tuple(item,))][1]) == ((supp_dict[patterns][0], supp_dict[patterns][1])):
+                    #print("poss super = ", patterns, "with supports = ", supp_dict[patterns][0],supp_dict[patterns][1])
+
+                    break
+                else:
+                    # item = B,C, sub = B
+                    #print("no super with that same supports:", (supp_dict[patterns][0],supp_dict[patterns][1]), "vs", (supp_dict[(tuple(item,))][0],supp_dict[(tuple(item,))][1]))
+                    # 2) if there is no match, you check for subpatterns with same support and delete them if match
+                    if (self.is_sub_sup_pattern(item,patterns) == True) and (supp_dict[(tuple(item,))][0],supp_dict[(tuple(item,))][1]) == (supp_dict[patterns][0],supp_dict[patterns][1]):
+                        del wracc_dict[patterns]
+                    wracc_dict[item_wracc] = [ (*self.name, item) ]"""
+        # 3) then add
         # max length reached
         elif len(wracc_dict) == k:
             min_wracc = min(wracc_dict.keys())
@@ -107,6 +123,32 @@ class SearchNode:
         else:
             wracc_dict[item_wracc] = [ (*self.name, item) ]
 
+    # 1)metodo to add(subpatter,superpattern) to add a pattern that has no subpattern inside the wracc_dict -
+    # add just when the pattern is not present.
+    #def add_pattern:
+
+    # 2)metodo to remove(subpatter,superpattern) to remove a subpattern (of the current pattern) that is present in the wracc_dict
+    #def remove_pattern:
+
+    # 3)method that tell if pattern is a subpattern of the patter visited: is_a_subsequentialpattern(pattern,subpattern)
+    # if subpatter? is_sub_sup_pattern(self,pattern,subpattern)
+    # if superpattern? is_sub_sup_pattern(self,superpattern,pattern)
+    # il più piccolo sempre a dx
+
+    def is_sub_sup_pattern(self, pattern, subpattern):
+        sub_pattern = list(subpattern)
+        pattern = list(pattern)
+        i = 0
+        while i < len(sub_pattern):
+            if pattern[i] != sub_pattern[i]:
+                pattern.remove(pattern[i])
+                if len(pattern) < len(sub_pattern):
+                    return False
+            else:
+                if len(pattern) == len(sub_pattern):
+                    return False
+                i += 1
+        return True
 
     def generate_children(self):
         # One node can generate its children
@@ -172,7 +214,6 @@ class SearchNode:
 
         return {}
 
-
 def sequence_mining(filepath_pos, filepath_neg, k):
     global P
     global N
@@ -196,7 +237,8 @@ def sequence_mining(filepath_pos, filepath_neg, k):
 def compute_wracc(px, nx):
     return round(((P/(P+N))*(N/(P+N)))*((px/P)-(nx/N)),5)
 
-def print_frequent(wracc_dict,supp_dict,wracc_saver):
+
+def print_frequent(wracc_dict, suppo_dict):
     min_wracc = min(wracc_dict.keys())
     for (itemset) in wracc_saver.keys():
         if wracc_saver[itemset] >= min_wracc:
@@ -205,25 +247,26 @@ def print_frequent(wracc_dict,supp_dict,wracc_saver):
 
 def main():
     global k
-    pos_filepath = sys.argv[1] # filepath to positive class file
-    neg_filepath = sys.argv[2] # filepath to negative class file
-    k = int(sys.argv[3])
-    #k = 6
-    #pos_filepath = "positive.txt"
-    #neg_filepath = "negative.txt"
+    #pos_filepath = sys.argv[1] # filepath to positive class file
+    #neg_filepath = sys.argv[2] # filepath to negative class file
+    #k = int(sys.argv[3])
+    k = 6
+    pos_filepath = "positive.txt"
+    neg_filepath = "negative.txt"
     #pos_filepath = "reu1_acq.txt"
     #neg_filepath = "reu2_earn.txt"
     # pos_filepath = "prot1_PKA_group15.txt"
     # neg_filepath = "prot2_SRC1521.txt"
 
     sequence_mining(pos_filepath, neg_filepath, k)
-    print_frequent(wracc_dict,supp_dict,wracc_saver)
+    #print_frequent(wracc_dict, supp_dict)
 
     #print("wracc dict")
-    #print(wracc_dict)
-    #print("freq dict")
-    #print(freq_dict)
-
+    print(wracc_dict)
+    #print("wracc saver")
+    #print(wracc_saver)
+    #print("supp dict")
+    #print(supp_dict)
 
 if __name__ == "__main__":
     main()
