@@ -93,25 +93,16 @@ class SearchNode:
         # 1) you check for super pattern not subpattern (with same support)
         # ! support(super) <= support(sub)
         if item_wracc in wracc_dict.keys():
-            print("item_wracc = ",item_wracc)
-            print("supports of ", item, (supp_dict[(tuple(item,))][0],supp_dict[(tuple(item,))][1]))
             for (patterns) in wracc_dict[item_wracc]:
                 # item = B,C, super = A,B,C
-                print("patterns = ",patterns)
-                print("supports of ", patterns, (supp_dict[patterns][0],supp_dict[patterns][1]))
-                print(self.is_sub_sup_pattern(patterns,item) == True)
-                print((supp_dict[(tuple(item,))][0], supp_dict[(tuple(item,))][1]) == ((supp_dict[patterns][0], supp_dict[patterns][1])))
-                """if (self.is_sub_sup_pattern(patterns,item) == True) and (supp_dict[(tuple(item,))][0], supp_dict[(tuple(item,))][1]) == ((supp_dict[patterns][0], supp_dict[patterns][1])):
-                    #print("poss super = ", patterns, "with supports = ", supp_dict[patterns][0],supp_dict[patterns][1])
-
+                if (self.is_sub_sup_pattern(patterns,item) == True) and (supp_dict[(tuple(item,))][0], supp_dict[(tuple(item,))][1]) == ((supp_dict[patterns][0], supp_dict[patterns][1])):
                     break
-                else:
                     # item = B,C, sub = B
                     #print("no super with that same supports:", (supp_dict[patterns][0],supp_dict[patterns][1]), "vs", (supp_dict[(tuple(item,))][0],supp_dict[(tuple(item,))][1]))
                     # 2) if there is no match, you check for subpatterns with same support and delete them if match
-                    if (self.is_sub_sup_pattern(item,patterns) == True) and (supp_dict[(tuple(item,))][0],supp_dict[(tuple(item,))][1]) == (supp_dict[patterns][0],supp_dict[patterns][1]):
-                        del wracc_dict[patterns]
-                    wracc_dict[item_wracc] = [ (*self.name, item) ]"""
+                if (self.is_sub_sup_pattern(item,patterns) == True) and (supp_dict[(tuple(item,))][0],supp_dict[(tuple(item,))][1]) == (supp_dict[patterns][0],supp_dict[patterns][1]):
+                    del wracc_dict[patterns]
+                wracc_dict[item_wracc] = [ (*self.name, item) ]
         # 3) then add
         # max length reached
         elif len(wracc_dict) == k:
@@ -136,18 +127,31 @@ class SearchNode:
     # il più piccolo sempre a dx
 
     def is_sub_sup_pattern(self, pattern, subpattern):
+        print("----sub sup-----")
         sub_pattern = list(subpattern)
         pattern = list(pattern)
+        print(pattern)
+        print(sub_pattern)
+        sub_len = len(sub_pattern)
+        leng = len(pattern)
         i = 0
-        while i < len(sub_pattern):
+        while i < sub_len:
             if pattern[i] != sub_pattern[i]:
+                print("mismatch: ", pattern[i], "vs", sub_pattern[i])
                 pattern.remove(pattern[i])
-                if len(pattern) < len(sub_pattern):
+                print("pattern = ", pattern)
+                # i -= 1
+                # print("decrementing i = ", i)
+                if len(pattern) < sub_len:
                     return False
             else:
-                if len(pattern) == len(sub_pattern):
+                if len(pattern) == sub_len:
+                    print("same pattern")
                     return False
+                print("match: ", pattern[i], "=", sub_pattern[i])
                 i += 1
+                print("it = ", i)
+                print("end")
         return True
 
     def generate_children(self):

@@ -28,8 +28,8 @@ j = tuple(k[:2]+k[2:])
 print(j)"""
 
 
-superpattern = ('A','B')
-pattern = ('B','C')
+superpattern = ('A',)
+pattern = ('B',)
 def is_subpattern(superpattern,pattern):
     sub_pattern = list(superpattern)
     pattern = list(pattern)
